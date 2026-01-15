@@ -1,5 +1,10 @@
 {
-  "name": "src",
+  "name": "truckload-twitch-extension",
+  "author": {
+    "name": "Demortes",
+    "email": "truckload@demortes.com",
+    "url": "https://demortes.com"
+  },
   "private": true,
   "version": "0.0.0",
   "type": "module",
