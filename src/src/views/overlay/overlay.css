@@ -1,0 +1,31 @@
+/* Video Overlay - Full screen, transparent, non-intrusive */
+.overlay {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  padding: var(--spacing-lg);
+  pointer-events: none;
+}
+
+.overlay-left {
+  position: absolute;
+  bottom: var(--spacing-lg);
+  left: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.overlay-right {
+  position: absolute;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  align-items: flex-end;
+}
+
+.overlay .panel {
+  pointer-events: auto;
+}

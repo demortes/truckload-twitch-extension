@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "WebSearch",
+      "WebFetch(domain:api.truckyapp.com)",
+      "WebFetch(domain:e.truckyapp.com)"
+    ]
+  }
+}
