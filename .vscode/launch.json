@@ -1,0 +1,83 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Dev Server",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "dev"],
+            "cwd": "${workspaceFolder}/src",
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**"]
+        },
+        {
+            "name": "Debug in Chrome",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/src",
+            "sourceMaps": true,
+            "sourceMapPathOverrides": {
+                "webpack:///src/*": "${webRoot}/*"
+            }
+        },
+        {
+            "name": "Debug in Edge",
+            "type": "msedge",
+            "request": "launch",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/src",
+            "sourceMaps": true
+        },
+        {
+            "name": "Preview Build",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "preview"],
+            "cwd": "${workspaceFolder}/src",
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**"]
+        },
+        {
+            "name": "Launch Backend (ASP.NET)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-backend",
+            "program": "${workspaceFolder}/backend/Truckload.Ebs/bin/Debug/net10.0/Truckload.Ebs.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/backend/Truckload.Ebs",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Attach to Backend",
+            "type": "coreclr",
+            "request": "attach",
+            "processName": "Truckload.Ebs"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Dev + Chrome",
+            "configurations": ["Launch Dev Server", "Debug in Chrome"],
+            "stopAll": true,
+            "preLaunchTask": ""
+        },
+        {
+            "name": "Dev + Edge",
+            "configurations": ["Launch Dev Server", "Debug in Edge"],
+            "stopAll": true,
+            "preLaunchTask": ""
+        },
+        {
+            "name": "Full Stack (Backend + Frontend + Chrome)",
+            "configurations": ["Launch Backend (ASP.NET)", "Launch Dev Server", "Debug in Chrome"],
+            "stopAll": true
+        }
+    ]
+}

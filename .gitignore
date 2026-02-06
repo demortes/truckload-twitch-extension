@@ -5,13 +5,19 @@ node_modules/
 dist/
 build/
 
+# .NET build output
+bin/
+obj/
+*.user
+*.suo
+*.DotSettings
+
 # Environment files
 .env
 .env.local
 .env.*.local
 
 # IDE/Editor
-.vscode/
 .idea/
 *.swp
 *.swo

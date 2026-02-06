@@ -26,6 +26,9 @@ const CONFIG = {
 
   // Game type
   game: 'ats', // 'ats' or 'ets2'
+
+  // Twitch PubSub
+  pubsubTopic: 'broadcast', // Listen to broadcast messages
 };
 
 // =============================================================================
@@ -274,6 +277,29 @@ export function setLocalTelemetryUrl(url) {
 }
 
 /**
+ * Fetch initial telemetry state from the backend API
+ * @param {string} backendUrl - Backend base URL
+ * @param {string} channelId - Twitch channel ID
+ */
+async function fetchInitialState(backendUrl, channelId) {
+  try {
+    const response = await fetch(`${backendUrl}/api/telemetry/${channelId}`);
+    if (response.ok) {
+      const data = await response.json();
+      // If the data is already in our normalized shape, apply directly
+      if (data.job || data.truck || data.convoy) {
+        updateState(data);
+      } else {
+        handleLocalTelemetry(data);
+      }
+      updateState({ connected: true });
+    }
+  } catch (err) {
+    console.warn('[Telemetry] Failed to fetch initial state:', err);
+  }
+}
+
+/**
  * Initialize the telemetry service
  * @param {object} options - Configuration options
  */
@@ -286,12 +312,22 @@ export function initialize(options = {}) {
     setLocalTelemetryUrl(options.localTelemetryUrl);
   }
 
+  // Fetch initial state from backend if backendUrl and channelId provided
+  if (options.backendUrl && options.channelId) {
+    fetchInitialState(options.backendUrl, options.channelId);
+  }
+
   if (options.connectLocal !== false) {
     connectLocalTelemetry();
   }
 
   if (options.playerIds) {
     startTruckyPolling(options.playerIds);
+  }
+
+  // Auto-connect to PubSub if Twitch Ext object is present
+  if (window.Twitch && window.Twitch.ext) {
+    connectTwitchPubSub();
   }
 }
 
@@ -301,7 +337,54 @@ export function initialize(options = {}) {
 export function cleanup() {
   disconnectLocalTelemetry();
   stopTruckyPolling();
+  // Twitch PubSub listener cleanup is handled by Twitch Ext lib primarily, 
+  // but we could unlisten if needed. 
+  if (window.Twitch && window.Twitch.ext) {
+    window.Twitch.ext.unlisten('broadcast', handlePubSubMessage);
+  }
   listeners = [];
+}
+
+// =============================================================================
+// Twitch PubSub
+// =============================================================================
+
+/**
+ * Connect to Twitch PubSub to receive remote telemetry
+ */
+export function connectTwitchPubSub() {
+  if (!window.Twitch || !window.Twitch.ext) {
+    console.warn('[Telemetry] Twitch Extension Helper not found. Skipping PubSub.');
+    return;
+  }
+
+  console.log('[Telemetry] Listening for Twitch PubSub messages...');
+  window.Twitch.ext.listen('broadcast', handlePubSubMessage);
+}
+
+/**
+ * Handle incoming PubSub Message
+ */
+function handlePubSubMessage(target, contentType, message) {
+  // message is a JSON string
+  try {
+    const data = JSON.parse(message);
+    // console.log('[Telemetry] Received PubSub update:', data);
+    
+    // Determine if this is a 'local' format directly forwarded or needs mapping?
+    // The server just stringifies the body from Trucky.
+    // If Trucky sends the same format as the local telemetry WebSocket, we can reuse handleLocalTelemetry.
+    // However, we might want to flag the source.
+    
+    // Trucky's formatting might depend on what the "Custom Telemetry" output is.
+    // Assuming the user configures Trucky to send the standard JSON output.
+    
+    handleLocalTelemetry(data);
+    updateState({ connected: true }); // Mark as connected since we are receiving data
+    
+  } catch (err) {
+    console.error('[Telemetry] Failed to parse PubSub message:', err);
+  }
 }
 
 export default {

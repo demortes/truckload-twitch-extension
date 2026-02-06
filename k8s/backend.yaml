@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: truckload-backend
+  namespace: truckload
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: truckload-backend
+  template:
+    metadata:
+      labels:
+        app: truckload-backend
+    spec:
+      initContainers:
+        # Wait for postgres to be ready before starting the backend
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h postgres -U truckload; do
+                echo "Waiting for PostgreSQL..."
+                sleep 2
+              done
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: truckload-secrets
+                  key: POSTGRES_PASSWORD
+      containers:
+        - name: backend
+          image: truckload-ebs:latest    # Replace with your registry: ghcr.io/<user>/truckload-ebs:latest
+          imagePullPolicy: IfNotPresent   # Change to Always when using a registry
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: ConnectionStrings__DefaultConnection
+              value: Host=postgres;Port=5432;Database=truckload;Username=truckload;Password=$(POSTGRES_PASSWORD)
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: truckload-secrets
+                  key: POSTGRES_PASSWORD
+            - name: Twitch__ClientId
+              valueFrom:
+                secretKeyRef:
+                  name: truckload-secrets
+                  key: TWITCH_EXTENSION_CLIENT_ID
+            - name: Twitch__ExtensionSecret
+              valueFrom:
+                secretKeyRef:
+                  name: truckload-secrets
+                  key: TWITCH_EXTENSION_SECRET
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: truckload-backend
+  namespace: truckload
+spec:
+  selector:
+    app: truckload-backend
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP

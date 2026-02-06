@@ -34,6 +34,7 @@ const mockData = {
 };
 
 const USE_LIVE_TELEMETRY = false;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
 
 function OverlayApp() {
   const [telemetry, setTelemetry] = useState(mockData);
@@ -51,7 +52,18 @@ function OverlayApp() {
       }
     });
 
-    telemetryService.initialize({ game: 'ats', connectLocal: true });
+    if (window.Twitch?.ext) {
+      window.Twitch.ext.onAuthorized((auth) => {
+        telemetryService.initialize({
+          game: 'ats',
+          connectLocal: false,
+          backendUrl: BACKEND_URL,
+          channelId: auth.channelId,
+        });
+      });
+    } else {
+      telemetryService.initialize({ game: 'ats', connectLocal: true });
+    }
 
     return () => {
       unsubscribe();

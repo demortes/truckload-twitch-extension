@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./Truckload.Ebs
+      dockerfile: Dockerfile
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=truckload;Username=${POSTGRES_USER:-truckload};Password=${POSTGRES_PASSWORD:-truckload}
+      - Twitch__ClientId=${TWITCH_EXTENSION_CLIENT_ID}
+      - Twitch__ExtensionSecret=${TWITCH_EXTENSION_SECRET}
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: truckload
+      POSTGRES_USER: ${POSTGRES_USER:-truckload}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-truckload}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U truckload"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:

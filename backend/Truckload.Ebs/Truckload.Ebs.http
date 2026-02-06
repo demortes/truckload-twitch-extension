@@ -1,0 +1,6 @@
+@Truckload.Ebs_HostAddress = http://localhost:5205
+
+GET {{Truckload.Ebs_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

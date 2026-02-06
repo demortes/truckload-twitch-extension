@@ -35,6 +35,7 @@ const mockData = {
 };
 
 const USE_LIVE_TELEMETRY = false;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
 
 const JobIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -77,7 +78,20 @@ function PanelApp() {
       }
     });
 
-    telemetryService.initialize({ game: 'ats', connectLocal: true });
+    // Initialize with Twitch auth for channel-aware backend fetching
+    if (window.Twitch?.ext) {
+      window.Twitch.ext.onAuthorized((auth) => {
+        telemetryService.initialize({
+          game: 'ats',
+          connectLocal: false,
+          backendUrl: BACKEND_URL,
+          channelId: auth.channelId,
+        });
+      });
+    } else {
+      // Fallback for local dev without Twitch
+      telemetryService.initialize({ game: 'ats', connectLocal: true });
+    }
 
     return () => {
       unsubscribe();

@@ -12,6 +12,7 @@ export default defineConfig({
         overlay: resolve(__dirname, 'overlay.html'),
         mobile: resolve(__dirname, 'mobile.html'),
         component: resolve(__dirname, 'component.html'),
+        config: resolve(__dirname, 'config.html'),
       },
     },
   },
