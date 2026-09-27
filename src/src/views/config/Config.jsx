@@ -5,31 +5,28 @@ import './config.css';
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
 const BRIDGE_RELEASES_URL = 'https://github.com/demortes/truckload-twitch-extension/releases/latest';
 
-function useCountdown(refreshMs) {
-  const [tick, setTick] = useState(0);
+function useNow(refreshMs) {
+  const [now, setNow] = useState(Date.now);
   useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), refreshMs);
+    const timer = setInterval(() => setNow(Date.now()), refreshMs);
     return () => clearInterval(timer);
   }, [refreshMs]);
-  return tick;
+  return now;
 }
 
 function Config() {
   const [twitchAuth, setTwitchAuth] = useState(null);
   const [keyData, setKeyData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !!window.Twitch?.ext);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(null);
   const [status, setStatus] = useState(null);
   const [confirmingRegen, setConfirmingRegen] = useState(false);
 
-  useCountdown(5000); // re-render periodically so "last data received Ns ago" stays fresh
+  const now = useNow(5000); // refreshed periodically so "last data received Ns ago" stays fresh
 
   useEffect(() => {
-    if (!window.Twitch?.ext) {
-      setLoading(false);
-      return;
-    }
+    if (!window.Twitch?.ext) return undefined;
 
     let cancelled = false;
 
@@ -134,7 +131,7 @@ function Config() {
   const bridgeCommand = keyData
     ? `Truckload.Bridge.exe --ingest-url ${ingestUrl} --key ${keyData.ingestKey} --save`
     : null;
-  const secondsAgo = status?.ts ? Math.max(0, Math.floor(Date.now() / 1000 - status.ts)) : null;
+  const secondsAgo = status?.ts ? Math.max(0, Math.floor(now / 1000 - status.ts)) : null;
   const isLive = secondsAgo !== null && secondsAgo < 90;
 
   return (
