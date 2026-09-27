@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Truckload.Ebs.Configuration;
 using Truckload.Ebs.Data;
 using Truckload.Ebs.Endpoints;
@@ -7,26 +8,39 @@ using Truckload.Ebs.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configuration
-builder.Services.Configure<TwitchSettings>(builder.Configuration.GetSection("Twitch"));
+builder.Services.AddOptions<TwitchSettings>()
+    .Bind(builder.Configuration.GetSection("Twitch"))
+    .ValidateOnStart();
+builder.Services.AddSingleton<IValidateOptions<TwitchSettings>, TwitchSettingsValidator>();
+
+builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("Database"));
 
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Services
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+builder.Services.AddSingleton<IBroadcastThrottle, BroadcastThrottle>();
 builder.Services.AddScoped<IChannelKeyService, ChannelKeyService>();
 builder.Services.AddScoped<ITelemetryService, TelemetryService>();
 builder.Services.AddHttpClient<ITwitchPubSubService, TwitchPubSubService>();
 
-// CORS — Twitch extensions run in iframes on various domains
+// CORS — Twitch extensions run in iframes on various domains; scope to what the API actually needs.
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
         policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+              .WithMethods("GET", "POST")
+              .WithHeaders("Authorization", "Content-Type", "X-Api-Key");
     });
+});
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    // Comfortably above the telemetry contract's 4KB payload cap, well below anything abusive.
+    options.Limits.MaxRequestBodySize = 16 * 1024;
 });
 
 var app = builder.Build();
@@ -39,8 +53,16 @@ app.MapIngestEndpoints();
 app.MapTelemetryEndpoints();
 app.MapChannelEndpoints();
 
-// Auto-migrate in development
-if (app.Environment.IsDevelopment())
+if (args.Contains("--migrate-only"))
+{
+    using var migrateScope = app.Services.CreateScope();
+    var migrateDb = migrateScope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await migrateDb.Database.MigrateAsync();
+    return;
+}
+
+var dbSettings = app.Services.GetRequiredService<IOptions<DatabaseSettings>>().Value;
+if (dbSettings.AutoMigrate)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -48,3 +70,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
+
+// Exposes the implicit Program class for WebApplicationFactory<Program> in the test project.
+public partial class Program;

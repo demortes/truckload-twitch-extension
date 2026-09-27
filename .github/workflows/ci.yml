@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: src/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore Truckload.slnx
+      - run: dotnet build Truckload.slnx -c Release --no-restore
+      - run: dotnet test Truckload.slnx -c Release --no-build
+      - name: Smoke-test bridge publish (win-x64 single file)
+        run: |
+          dotnet publish bridge/Truckload.Bridge -c Release -r win-x64 --self-contained \
+            -p:PublishSingleFile=true -o /tmp/bridge-publish-check
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build backend image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Truckload.Ebs/Dockerfile
+          push: false

@@ -23,7 +23,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<TelemetrySnapshot>(entity =>
         {
             entity.HasKey(t => t.ChannelId);
-            entity.Property(t => t.PayloadJson).HasColumnType("jsonb");
+            // "jsonb" is Postgres-specific; guard it so the SQLite provider used by tests can build the model.
+            if (Database.IsNpgsql())
+                entity.Property(t => t.PayloadJson).HasColumnType("jsonb");
             entity.HasOne(t => t.Channel)
                   .WithOne(c => c.LatestTelemetry)
                   .HasForeignKey<TelemetrySnapshot>(t => t.ChannelId)

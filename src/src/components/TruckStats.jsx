@@ -1,9 +1,11 @@
 import '../styles/Panel.css';
 
-function TruckStats({ truck }) {
+function TruckStats({ truck, units = 'imperial' }) {
   if (!truck) {
     return null;
   }
+
+  const distanceUnit = units === 'metric' ? 'km' : 'mi';
 
   const getFuelClass = (percent) => {
     if (percent > 50) return '';
@@ -58,7 +60,7 @@ function TruckStats({ truck }) {
         {truck.odometer !== undefined && (
           <div className="info-row">
             <span className="info-label">Odometer</span>
-            <span className="info-value">{truck.odometer.toLocaleString()} mi</span>
+            <span className="info-value">{truck.odometer.toLocaleString()} {distanceUnit}</span>
           </div>
         )}
       </div>

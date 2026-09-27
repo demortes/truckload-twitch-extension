@@ -1,6 +1,7 @@
 import '../styles/Panel.css';
 
-function JobInfo({ job }) {
+function JobInfo({ job, units = 'imperial' }) {
+  const distanceUnit = units === 'metric' ? 'km' : 'mi';
   if (!job || !job.active) {
     return (
       <div className="panel">
@@ -51,7 +52,7 @@ function JobInfo({ job }) {
         </div>
         <div className="info-row">
           <span className="info-label">Distance</span>
-          <span className="info-value">{job.distance} mi</span>
+          <span className="info-value">{job.distance} {distanceUnit}</span>
         </div>
         <div className="info-row">
           <span className="info-label">ETA</span>

@@ -1,7 +1,7 @@
 import '../styles/Panel.css';
 
 function Convoy({ convoy }) {
-  if (!convoy || !convoy.active || convoy.members.length === 0) {
+  if (!convoy || !convoy.active || !convoy.members || convoy.members.length === 0) {
     return null;
   }
 

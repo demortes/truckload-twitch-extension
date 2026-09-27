@@ -7,6 +7,7 @@
 }
 
 .component-toggle {
+  position: relative;
   width: 36px;
   height: 36px;
   padding: var(--spacing-sm);
@@ -80,4 +81,19 @@
 
 .component-value.warning {
   color: var(--accent-orange);
+}
+
+.component-status-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  border: 1px solid var(--bg-primary);
+}
+
+.component-status-dot.offline {
+  background: var(--accent-red);
 }

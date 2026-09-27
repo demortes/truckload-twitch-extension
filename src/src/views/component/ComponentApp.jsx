@@ -1,66 +1,18 @@
-import { useState, useEffect } from 'react';
-import { telemetryService } from '../../services';
+import { useState } from 'react';
+import { useTelemetry } from '../../hooks/useTelemetry';
 import './component.css';
 
-// Mock data for development
-const mockData = {
-  job: {
-    active: true,
-    cargo: 'Electronics',
-    destination: 'Phoenix',
-    etaMinutes: 245
-  },
-  truck: {
-    make: 'Peterbilt',
-    model: '579',
-    fuelPercent: 67
-  }
-};
-
-const USE_LIVE_TELEMETRY = false;
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+function formatTime(minutes) {
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours}h ${mins}m`;
+}
 
 function ComponentApp() {
-  const [telemetry, setTelemetry] = useState(mockData);
+  const { job, truck, connected, stale } = useTelemetry();
   const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    if (!USE_LIVE_TELEMETRY) return;
-
-    const unsubscribe = telemetryService.subscribe((state) => {
-      if (state.job || state.truck) {
-        setTelemetry({
-          job: state.job || mockData.job,
-          truck: state.truck || mockData.truck,
-        });
-      }
-    });
-
-    if (window.Twitch?.ext) {
-      window.Twitch.ext.onAuthorized((auth) => {
-        telemetryService.initialize({
-          game: 'ats',
-          connectLocal: false,
-          backendUrl: BACKEND_URL,
-          channelId: auth.channelId,
-        });
-      });
-    } else {
-      telemetryService.initialize({ game: 'ats', connectLocal: true });
-    }
-
-    return () => {
-      unsubscribe();
-      telemetryService.cleanup();
-    };
-  }, []);
-
-  const formatTime = (minutes) => {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
-  };
+  const offline = !connected || stale;
 
   return (
     <div className={`component-view ${expanded ? 'expanded' : ''}`}>
@@ -75,34 +27,44 @@ function ComponentApp() {
           <circle cx="5.5" cy="18.5" r="2.5" />
           <circle cx="18.5" cy="18.5" r="2.5" />
         </svg>
+        <span className={`component-status-dot ${offline ? 'offline' : ''}`} />
       </button>
 
       {expanded && (
         <div className="component-content">
-          {telemetry.job?.active && (
+          {job?.active && (
             <div className="component-section">
               <div className="component-row">
                 <span className="component-label">To</span>
-                <span className="component-value highlight">{telemetry.job.destination}</span>
+                <span className="component-value highlight">{job.destination}</span>
               </div>
               <div className="component-row">
                 <span className="component-label">ETA</span>
-                <span className="component-value">{formatTime(telemetry.job.etaMinutes)}</span>
+                <span className="component-value">{formatTime(job.etaMinutes)}</span>
               </div>
             </div>
           )}
-          <div className="component-section">
-            <div className="component-row">
-              <span className="component-label">Truck</span>
-              <span className="component-value">{telemetry.truck.make}</span>
+          {truck && (
+            <div className="component-section">
+              <div className="component-row">
+                <span className="component-label">Truck</span>
+                <span className="component-value">{truck.make}</span>
+              </div>
+              <div className="component-row">
+                <span className="component-label">Fuel</span>
+                <span className={`component-value ${truck.fuelPercent < 25 ? 'warning' : ''}`}>
+                  {truck.fuelPercent}%
+                </span>
+              </div>
             </div>
-            <div className="component-row">
-              <span className="component-label">Fuel</span>
-              <span className={`component-value ${telemetry.truck.fuelPercent < 25 ? 'warning' : ''}`}>
-                {telemetry.truck.fuelPercent}%
-              </span>
+          )}
+          {!job?.active && !truck && (
+            <div className="component-section">
+              <div className="component-row">
+                <span className="component-value">{offline ? 'Offline' : 'No active job'}</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

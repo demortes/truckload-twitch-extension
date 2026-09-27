@@ -1,6 +1,51 @@
-@Truckload.Ebs_HostAddress = http://localhost:5205
+@Truckload.Ebs_HostAddress = http://localhost:8080
+@broadcasterJwt = REPLACE_WITH_BROADCASTER_JWT
+@ingestKey = REPLACE_WITH_INGEST_KEY
+@channelId = 12345
 
-GET {{Truckload.Ebs_HostAddress}}/weatherforecast/
+### Health check
+GET {{Truckload.Ebs_HostAddress}}/api/health
 Accept: application/json
 
-###
+### Fetch the broadcaster's ingest key (401 if header missing/invalid, 404 if none generated yet)
+GET {{Truckload.Ebs_HostAddress}}/api/channels/keys
+Authorization: Bearer {{broadcasterJwt}}
+Accept: application/json
+
+### Generate (or rotate) the broadcaster's ingest key
+POST {{Truckload.Ebs_HostAddress}}/api/channels/keys
+Authorization: Bearer {{broadcasterJwt}}
+
+### Push a sample telemetry payload (canonical v1 contract)
+POST {{Truckload.Ebs_HostAddress}}/api/ingest
+X-Api-Key: {{ingestKey}}
+Content-Type: application/json
+
+{
+  "v": 1,
+  "ts": 1727400000,
+  "connected": true,
+  "paused": false,
+  "game": "ats",
+  "units": "imperial",
+  "job": {
+    "active": true,
+    "cargo": "Electronics",
+    "source": "Los Angeles",
+    "destination": "Phoenix",
+    "distance": 372,
+    "etaMinutes": 245
+  },
+  "truck": {
+    "make": "Peterbilt",
+    "model": "579",
+    "licensePlate": "TRK-4521",
+    "fuelPercent": 67,
+    "damagePercent": 3,
+    "odometer": 124532
+  }
+}
+
+### Fetch the latest stored telemetry for a channel
+GET {{Truckload.Ebs_HostAddress}}/api/telemetry/{{channelId}}
+Accept: application/json
