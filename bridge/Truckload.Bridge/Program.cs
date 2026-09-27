@@ -30,7 +30,7 @@ if (!options.DryRun && (string.IsNullOrWhiteSpace(options.IngestUrl) || string.I
 
 if (options.Save)
 {
-    options.Save(baseDirectory);
+    options.SaveTo(baseDirectory);
     Console.WriteLine($"Saved configuration to {Path.Combine(baseDirectory, BridgeOptions.ConfigFileName)}");
 }
 

@@ -117,7 +117,7 @@ public sealed class BridgeOptions
         return args[++i];
     }
 
-    public void Save(string baseDirectory)
+    public void SaveTo(string baseDirectory)
     {
         var path = Path.Combine(baseDirectory, ConfigFileName);
         var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
