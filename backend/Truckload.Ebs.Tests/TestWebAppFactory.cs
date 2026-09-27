@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -45,7 +46,12 @@ public class TestWebAppFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            // Removing just DbContextOptions<AppDbContext> isn't enough: AddDbContext also
+            // registers an IDbContextOptionsConfiguration<AppDbContext> (the Npgsql config
+            // delegate from Program.cs) which survives and conflicts with the Sqlite provider
+            // registered below ("Only a single database provider can be registered").
             services.RemoveAll<DbContextOptions<AppDbContext>>();
+            services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
             services.AddDbContext<AppDbContext>(options => options.UseSqlite(_connection));
 
             services.RemoveAll<ITwitchPubSubService>();
