@@ -21,6 +21,7 @@ function Config() {
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(null);
   const [status, setStatus] = useState(null);
+  const [confirmingRegen, setConfirmingRegen] = useState(false);
 
   useCountdown(5000); // re-render periodically so "last data received Ns ago" stays fresh
 
@@ -97,9 +98,8 @@ function Config() {
   };
 
   const regenerateKey = async () => {
-    if (window.confirm('This will invalidate your current key. The bridge app on your PC will need the new key. Continue?')) {
-      await generateKey();
-    }
+    setConfirmingRegen(false);
+    await generateKey();
   };
 
   const copyToClipboard = (text, label) => {
@@ -192,9 +192,23 @@ function Config() {
                 </button>
               </div>
               <p className="config-warning">Keep this key secret. Anyone with it can send data to your channel's overlay.</p>
-              <button className="config-link config-danger" onClick={regenerateKey}>
-                Regenerate Key
-              </button>
+              {confirmingRegen ? (
+                <div className="config-copy-row">
+                  <span className="config-warning">
+                    This will invalidate your current key. The bridge app on your PC will need the new key.
+                  </span>
+                  <button className="config-link config-danger" onClick={regenerateKey}>
+                    Confirm regenerate
+                  </button>
+                  <button className="config-link" onClick={() => setConfirmingRegen(false)}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button className="config-link config-danger" onClick={() => setConfirmingRegen(true)}>
+                  Regenerate Key
+                </button>
+              )}
             </div>
 
             <div className="config-section">
