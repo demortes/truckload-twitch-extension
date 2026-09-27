@@ -1,0 +1,132 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  backend-image:
+    name: Build and push backend image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Derive version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Truckload.Ebs/Dockerfile
+          push: true
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/truckload-ebs:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/truckload-ebs:latest
+
+  bridge:
+    name: Publish bridge exe
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Derive version
+        id: version
+        shell: bash
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Publish self-contained single-file exe
+        run: |
+          dotnet publish bridge/Truckload.Bridge -c Release -r win-x64 --self-contained `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:Version=${{ steps.version.outputs.version }} `
+            -o publish/bridge
+      - name: Zip release asset
+        shell: bash
+        run: |
+          cp bridge/README.md publish/bridge/README.md
+          cd publish/bridge
+          7z a ../../Truckload.Bridge-win-x64-v${{ steps.version.outputs.version }}.zip .
+      - name: Upload bridge artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bridge-release-asset
+          path: Truckload.Bridge-win-x64-v*.zip
+
+  frontend:
+    name: Build and zip frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Derive version
+        id: version
+        shell: bash
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - name: Set up Node
+        # This is a publish job, so caching is disabled to avoid a poisoned
+        # cache reaching a released artifact (cache: false, not 'npm').
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: false
+      - name: Install dependencies
+        run: npm ci
+      - name: Build with the production backend URL
+        run: npm run build
+        env:
+          VITE_BACKEND_URL: ${{ vars.BACKEND_URL }}
+      - name: Zip extension assets
+        run: npm run zip
+      - name: Rename zip with version
+        run: mv truckload-extension.zip ../truckload-extension-v${{ steps.version.outputs.version }}.zip
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-release-asset
+          path: truckload-extension-v*.zip
+
+  release:
+    name: Publish GitHub release
+    needs: [backend-image, bridge, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --draft \
+            --title "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            artifacts/*.zip

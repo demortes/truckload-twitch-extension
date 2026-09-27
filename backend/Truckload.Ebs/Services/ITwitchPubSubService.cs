@@ -1,6 +1,8 @@
+using Truckload.Ebs.Models;
+
 namespace Truckload.Ebs.Services;
 
 public interface ITwitchPubSubService
 {
-    Task<bool> BroadcastAsync(string channelId, string messageJson);
+    Task<BroadcastResult> BroadcastAsync(string channelId, string messageJson, CancellationToken cancellationToken = default);
 }

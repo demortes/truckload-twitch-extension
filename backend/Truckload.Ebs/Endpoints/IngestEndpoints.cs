@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Truckload.Contracts;
 using Truckload.Ebs.Models;
 using Truckload.Ebs.Services;
 
@@ -11,9 +13,10 @@ public static class IngestEndpoints
             HttpContext context,
             IChannelKeyService keyService,
             ITelemetryService telemetryService,
-            ITwitchPubSubService pubSub) =>
+            ITwitchPubSubService pubSub,
+            IBroadcastThrottle throttle,
+            ILogger<Program> logger) =>
         {
-            // Extract API key from header or query param
             var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault()
                       ?? context.Request.Query["key"].FirstOrDefault();
 
@@ -24,23 +27,66 @@ public static class IngestEndpoints
             if (channelId is null)
                 return Results.Json(new ErrorResponse { Error = "Invalid API key" }, statusCode: 401);
 
-            // Read raw JSON body
-            context.Request.EnableBuffering();
-            using var reader = new StreamReader(context.Request.Body);
-            var rawJson = await reader.ReadToEndAsync();
+            if (context.Request.ContentLength is { } contentLength && contentLength > TelemetryPayloadValidator.MaxBodyBytes)
+                return Results.Json(
+                    new ErrorResponse { Error = $"Request body exceeds {TelemetryPayloadValidator.MaxBodyBytes} bytes" },
+                    statusCode: 413);
 
-            if (string.IsNullOrWhiteSpace(rawJson))
+            byte[] rawBytes;
+            using (var buffer = new MemoryStream())
+            {
+                await context.Request.Body.CopyToAsync(buffer, TelemetryPayloadValidator.MaxBodyBytes + 1);
+                rawBytes = buffer.ToArray();
+            }
+
+            if (rawBytes.Length == 0)
                 return Results.Json(new ErrorResponse { Error = "Empty request body" }, statusCode: 400);
 
-            // Persist latest telemetry
-            await telemetryService.UpsertAsync(channelId, rawJson);
+            if (!TelemetryPayloadValidator.WithinSizeLimit(rawBytes))
+                return Results.Json(
+                    new ErrorResponse { Error = $"Request body exceeds {TelemetryPayloadValidator.MaxBodyBytes} bytes" },
+                    statusCode: 413);
 
-            // Broadcast to Twitch PubSub
-            var success = await pubSub.BroadcastAsync(channelId, rawJson);
-            if (!success)
-                return Results.Json(new ErrorResponse { Error = "Failed to broadcast to Twitch" }, statusCode: 502);
+            TelemetryPayload? payload;
+            try
+            {
+                payload = JsonSerializer.Deserialize(rawBytes, TelemetryJsonContext.Default.TelemetryPayload);
+            }
+            catch (JsonException ex)
+            {
+                // Log details internally only — the raw exception message can echo back
+                // fragments of the request body / internal type names and shouldn't be
+                // exposed to a caller that only needs to know its payload was rejected.
+                logger.LogInformation(ex, "Rejected malformed ingest payload for channel {ChannelId}", channelId);
+                return Results.Json(
+                    new ErrorResponse { Error = "Invalid telemetry payload" },
+                    statusCode: 400);
+            }
 
-            return Results.Ok(new { success = true, message = "Broadcasted to Twitch" });
+            var errors = TelemetryPayloadValidator.Validate(payload);
+            if (errors.Count > 0)
+                return Results.Json(
+                    new ErrorResponse { Error = "Telemetry payload failed validation", Details = string.Join(" ", errors) },
+                    statusCode: 400);
+
+            var canonicalJson = JsonSerializer.Serialize(payload!, TelemetryJsonContext.Default.TelemetryPayload);
+
+            await telemetryService.UpsertAsync(channelId, canonicalJson);
+
+            if (!throttle.TryAcquire(channelId))
+                return Results.Ok(new { stored = true, broadcast = "throttled" });
+
+            var result = await pubSub.BroadcastAsync(channelId, canonicalJson, context.RequestAborted);
+
+            if (result.Outcome == BroadcastOutcome.RateLimited && result.RetryAfter is { } retryAfter)
+                throttle.Suppress(channelId, retryAfter);
+
+            return Results.Ok(new
+            {
+                stored = true,
+                broadcast = result.OutcomeText,
+                retryAfterMs = result.RetryAfter?.TotalMilliseconds,
+            });
         });
     }
 }

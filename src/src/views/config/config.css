@@ -1,0 +1,166 @@
+/* The Twitch config view isn't an overlay: it needs normal document flow,
+   scrolling, and click/select interaction, unlike the overlay views which
+   set #root to fixed/non-interactive in index.css. */
+.config-view {
+  position: static;
+  width: auto;
+  height: auto;
+  min-height: 100vh;
+  overflow: auto;
+  pointer-events: auto;
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  background: #0f0f11;
+}
+
+.config-card {
+  width: 100%;
+  max-width: 640px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--panel-radius);
+  padding: 32px;
+}
+
+.config-card h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent-orange);
+  margin-bottom: var(--spacing-md);
+}
+
+.config-card h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+}
+
+.config-intro {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.5;
+}
+
+.config-muted {
+  color: var(--text-secondary);
+}
+
+.config-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.config-section {
+  background: var(--bg-accent);
+  border: 1px solid var(--border-color);
+  border-radius: var(--panel-radius);
+  padding: var(--spacing-md);
+}
+
+.config-section-centered {
+  text-align: center;
+}
+
+.config-copy-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: stretch;
+}
+
+.config-code-block,
+.config-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--text-primary);
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.config-button {
+  background: var(--accent-orange);
+  color: #1a1006;
+  border: none;
+  border-radius: 6px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.config-button:hover {
+  filter: brightness(1.1);
+}
+
+.config-link-button {
+  display: inline-block;
+  background: var(--accent-orange);
+  color: #1a1006;
+  border-radius: 6px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.config-hint {
+  margin-top: var(--spacing-sm);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.config-warning {
+  margin-top: var(--spacing-sm);
+  font-size: 12px;
+  color: var(--accent-orange);
+}
+
+.config-link {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: var(--spacing-sm);
+}
+
+.config-link.config-danger:hover {
+  color: var(--accent-red);
+}
+
+.config-alert {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid var(--accent-red);
+  color: #fca5a5;
+  border-radius: 6px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.config-status-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.config-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.config-status-dot.live {
+  background: var(--accent-green);
+}
+
+.config-status-dot.offline {
+  background: var(--accent-red);
+}

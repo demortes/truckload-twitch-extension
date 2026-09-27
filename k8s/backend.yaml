@@ -42,13 +42,15 @@ spec:
               value: Production
             - name: ASPNETCORE_URLS
               value: http://+:8080
-            - name: ConnectionStrings__DefaultConnection
-              value: Host=postgres;Port=5432;Database=truckload;Username=truckload;Password=$(POSTGRES_PASSWORD)
+            # POSTGRES_PASSWORD must be defined before it's referenced via $(POSTGRES_PASSWORD)
+            # below — Kubernetes only expands env var references that appear earlier in this list.
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: truckload-secrets
                   key: POSTGRES_PASSWORD
+            - name: ConnectionStrings__DefaultConnection
+              value: Host=postgres;Port=5432;Database=truckload;Username=truckload;Password=$(POSTGRES_PASSWORD)
             - name: Twitch__ClientId
               valueFrom:
                 secretKeyRef:

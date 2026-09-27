@@ -1,5 +1,10 @@
 # Kubernetes Deployment Guide — Truckload EBS
 
+> **Secondary/untested path.** The supported v1 deployment is the single-VM
+> docker-compose setup in [`deploy/`](../deploy/DEPLOY.md). This guide is kept
+> for anyone who already runs a Kubernetes cluster, but it hasn't been
+> exercised end to end in this release — expect to troubleshoot.
+
 This guide deploys the Truckload Extension Backend Service (ASP.NET Core + PostgreSQL) to a Kubernetes cluster.
 
 ## Architecture
@@ -44,10 +49,8 @@ Everything runs in the `truckload` namespace.
 
 ```bash
 # From the repo root
-cd backend/Truckload.Ebs
-
-# Build the image
-docker build -t truckload-ebs:latest .
+# From the repo root (the Dockerfile now references ../../shared/Truckload.Contracts)
+docker build -t truckload-ebs:latest -f backend/Truckload.Ebs/Dockerfile .
 
 # Tag for your registry (pick one)
 docker tag truckload-ebs:latest ghcr.io/<your-user>/truckload-ebs:latest
@@ -274,8 +277,7 @@ Upload the built `dist/` folder to the Twitch Developer Console as your extensio
 
 ```bash
 # Build new image
-cd backend/Truckload.Ebs
-docker build -t ghcr.io/<user>/truckload-ebs:v2 .
+docker build -t ghcr.io/<user>/truckload-ebs:v2 -f backend/Truckload.Ebs/Dockerfile .
 docker push ghcr.io/<user>/truckload-ebs:v2
 
 # Update the deployment

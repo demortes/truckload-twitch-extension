@@ -1,0 +1,33 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-accent);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-badge.online {
+  color: var(--accent-green);
+}
+
+.status-badge.online .status-dot {
+  background: var(--accent-green);
+}
+
+.status-badge.offline {
+  color: var(--text-muted);
+}
+
+.status-badge.offline .status-dot {
+  background: var(--accent-red);
+}

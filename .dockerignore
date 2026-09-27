@@ -1,0 +1,10 @@
+.git
+**/bin
+**/obj
+src/node_modules
+src/dist
+k8s
+deploy
+docs
+*.zip
+*.md

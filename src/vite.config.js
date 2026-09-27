@@ -2,17 +2,22 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
+const root = import.meta.dirname
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // Twitch serves the built assets from its own CDN path, not from the domain root,
+  // so asset URLs must be relative.
+  base: './',
   build: {
     rollupOptions: {
       input: {
-        panel: resolve(__dirname, 'panel.html'),
-        overlay: resolve(__dirname, 'overlay.html'),
-        mobile: resolve(__dirname, 'mobile.html'),
-        component: resolve(__dirname, 'component.html'),
-        config: resolve(__dirname, 'config.html'),
+        panel: resolve(root, 'panel.html'),
+        overlay: resolve(root, 'overlay.html'),
+        mobile: resolve(root, 'mobile.html'),
+        component: resolve(root, 'component.html'),
+        config: resolve(root, 'config.html'),
       },
     },
   },
