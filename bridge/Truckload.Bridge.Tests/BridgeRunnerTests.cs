@@ -16,10 +16,10 @@ public class BridgeRunnerTests
         Units = "auto",
     };
 
-    private static FunbitTelemetry Connected(int fuel = 50) => new()
+    private static FunbitTelemetry Connected(int fuel = 50, double wearChassis = 0) => new()
     {
         Game = new FunbitGame { Connected = true, GameName = "ATS" },
-        Truck = new FunbitTruck { Make = "Peterbilt", Model = "579", Fuel = fuel, FuelCapacity = 100 },
+        Truck = new FunbitTruck { Make = "Peterbilt", Model = "579", Fuel = fuel, FuelCapacity = 100, WearChassis = wearChassis },
     };
 
     [Fact]
@@ -84,6 +84,31 @@ public class BridgeRunnerTests
         time.Advance(TimeSpan.FromMilliseconds(900)); // now past 1s total
         var afterMinInterval = await runner.TickAsync(state, CancellationToken.None);
         Assert.NotNull(afterMinInterval);
+    }
+
+    [Fact]
+    public async Task SuddenDamageJump_AttachesACrashEventAndSendsImmediately()
+    {
+        var time = new FakeTimeProvider();
+        var source = new FakeTelemetrySource { NextResult = TelemetryFetchResult.Ok(Connected(wearChassis: 0.02)) };
+        var runner = new BridgeRunner(source, sender: null, Options(), time);
+        var state = new RunnerState();
+
+        await runner.TickAsync(state, CancellationToken.None);
+
+        source.NextResult = TelemetryFetchResult.Ok(Connected(wearChassis: 0.30));
+        time.Advance(TimeSpan.FromSeconds(2));
+        var sent = await runner.TickAsync(state, CancellationToken.None);
+
+        Assert.NotNull(sent);
+        Assert.NotNull(sent!.Events);
+        var evt = Assert.Single(sent.Events!);
+        Assert.Equal("crash", evt.Type);
+
+        // The next tick, with no further jump, should not repeat the event.
+        time.Advance(TimeSpan.FromSeconds(2));
+        var next = await runner.TickAsync(state, CancellationToken.None);
+        Assert.Null(next?.Events);
     }
 
     [Fact]

@@ -10,6 +10,11 @@ public static class TelemetryPayloadValidator
     private const int MaxStringLength = 64;
     private const int SupportedSchemaVersion = 1;
 
+    /// <summary>Maximum number of events allowed in a single payload's <c>events</c> list.</summary>
+    private const int MaxEvents = 5;
+
+    private static readonly string[] AllowedEventSeverities = { "info", "warning", "critical" };
+
     /// <summary>Validates a deserialized payload against the v1 contract's rules. Returns an empty list when valid.</summary>
     public static IReadOnlyList<string> Validate(TelemetryPayload? payload)
     {
@@ -38,6 +43,9 @@ public static class TelemetryPayloadValidator
             if (payload.Truck is { } truck)
                 ValidateTruck(truck, errors);
         }
+
+        if (payload.Events is { } events)
+            ValidateEvents(events, errors);
 
         return errors;
     }
@@ -74,6 +82,30 @@ public static class TelemetryPayloadValidator
 
         if (truck.Odometer < 0)
             errors.Add("'truck.odometer' must not be negative.");
+    }
+
+    private static void ValidateEvents(IReadOnlyList<TelemetryEvent> events, List<string> errors)
+    {
+        if (events.Count > MaxEvents)
+        {
+            errors.Add($"'events' must not contain more than {MaxEvents} entries.");
+            return;
+        }
+
+        foreach (var evt in events)
+        {
+            if (string.IsNullOrWhiteSpace(evt.Type))
+                errors.Add("'events[].type' must not be empty.");
+            CheckString("events[].type", evt.Type, errors);
+
+            if (!AllowedEventSeverities.Contains(evt.Severity))
+                errors.Add($"'events[].severity' must be one of: {string.Join(", ", AllowedEventSeverities)}.");
+
+            if (string.IsNullOrWhiteSpace(evt.Message))
+                errors.Add("'events[].message' must not be empty.");
+            if (evt.Message is { Length: > 200 })
+                errors.Add("'events[].message' exceeds maximum length.");
+        }
     }
 
     private static void CheckString(string field, string? value, List<string> errors)

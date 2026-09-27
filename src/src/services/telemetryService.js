@@ -28,6 +28,7 @@ let state = {
   convoy: null,
   gameTime: null,
   lastTs: null,
+  events: [],
 };
 
 let listeners = [];
@@ -76,6 +77,10 @@ function applyPayload(payload) {
     job: payload.job ?? null,
     truck: payload.truck ?? null,
     lastTs: payload.ts ?? Math.floor(Date.now() / 1000),
+    // Transient, one-off alerts (see docs/telemetry-contract.md#events). Present only on the
+    // tick where the bridge detected something noteworthy; every other tick resets this to an
+    // empty array, which is what tells EventToast a batch is "new" rather than lingering state.
+    events: Array.isArray(payload.events) ? payload.events : [],
   });
 }
 

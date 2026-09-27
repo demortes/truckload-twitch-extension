@@ -46,6 +46,19 @@ public sealed class BridgeRunner
             _log($"[warn] {fetch.Error}");
         state.LastLoggedUnavailable = !fetch.Available;
 
+        // Event detection compares this tick's truck info to the previous tick's, regardless
+        // of whether that previous tick was actually sent (unlike LastSent below, which only
+        // tracks what was last decided worth sending) — so a crash right after a heartbeat
+        // resend is still caught on the very next poll.
+        var events = TelemetryEventDetector.Detect(state.LastTruck, payload.Truck);
+        if (events is not null)
+        {
+            payload = payload with { Events = events };
+            if (_options.Verbose)
+                _log($"[info] event detected: {string.Join(", ", events.Select(e => e.Type))}");
+        }
+        state.LastTruck = payload.Truck;
+
         var changed = state.LastSent is null || !PayloadsEqualIgnoringTimestamp(state.LastSent, payload);
         var heartbeatDue = state.LastSentAt is null || now - state.LastSentAt >= TimeSpan.FromSeconds(_options.HeartbeatSeconds);
         var minIntervalOk = state.LastSentAt is null || now - state.LastSentAt >= MinSendInterval;
@@ -135,4 +148,9 @@ public sealed class RunnerState
     public TimeSpan? CurrentBackoff { get; set; }
     public bool? LastLoggedUnavailable { get; set; }
     public BridgeExitReason? ExitRequested { get; set; }
+
+    /// <summary>The truck info from the previous tick, used by <see cref="TelemetryEventDetector"/>.
+    /// Tracked independently of <see cref="LastSent"/> so event detection compares every poll,
+    /// not just polls whose payload was actually sent.</summary>
+    public TruckInfo? LastTruck { get; set; }
 }

@@ -29,6 +29,7 @@ const mockTelemetry = {
       { name: 'HighwayKing', isLeader: false },
     ],
   },
+  events: [],
 };
 
 export default mockTelemetry;
