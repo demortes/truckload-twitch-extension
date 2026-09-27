@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Truckload — Live ATS/ETS2 Telemetry for Twitch</title>
+<meta name="description" content="Truckload is a Twitch Extension for American Truck Simulator and Euro Truck Simulator 2 streamers. Viewers see the streamer's live job and truck stats right on the stream." />
+<style>
+  :root {
+    --bg: #0d0d10;
+    --bg-elevated: #17171c;
+    --bg-card: #1e1e25;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #e4e4e7;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --blue: #3b82f6;
+    --green: #22c55e;
+    --orange: #f97316;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+  }
+
+  a { color: var(--blue); }
+
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  header.top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(13, 13, 16, 0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  header.top .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .brand .dot { color: var(--orange); }
+
+  nav.top-links {
+    display: flex;
+    gap: 18px;
+    font-size: 14px;
+  }
+
+  nav.top-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+
+  nav.top-links a:hover { color: var(--text); }
+
+  .hero {
+    padding: 64px 0 48px;
+    text-align: center;
+  }
+
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 44px);
+    margin: 0 0 14px;
+    letter-spacing: -0.02em;
+  }
+
+  .hero p.lede {
+    font-size: 18px;
+    color: var(--text-secondary);
+    max-width: 620px;
+    margin: 0 auto 28px;
+  }
+
+  .cta-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 11px 20px;
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    border: 1px solid var(--border);
+  }
+
+  .btn.primary {
+    background: var(--blue);
+    color: white;
+    border-color: transparent;
+  }
+
+  .btn.secondary {
+    background: var(--bg-card);
+    color: var(--text);
+  }
+
+  section { padding: 40px 0; }
+
+  section h2 {
+    font-size: 24px;
+    margin: 0 0 8px;
+  }
+
+  section p.section-sub {
+    color: var(--text-secondary);
+    margin: 0 0 28px;
+    max-width: 640px;
+  }
+
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .flow .step {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 14px;
+    text-align: center;
+    position: relative;
+  }
+
+  .flow .step .num {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    border-radius: 50%;
+    background: var(--blue);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .flow .step h3 {
+    font-size: 14px;
+    margin: 0 0 6px;
+  }
+
+  .flow .step p {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .flow .arrow {
+    display: none;
+  }
+
+  @media (min-width: 640px) {
+    .flow .step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 16px;
+      z-index: 1;
+    }
+  }
+
+  @media (max-width: 639px) {
+    .flow { grid-template-columns: 1fr; }
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+
+  .card .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 8px;
+  }
+
+  .card h3 {
+    margin: 0 0 6px;
+    font-size: 16px;
+  }
+
+  .card p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+  }
+
+  ol.steps {
+    padding-left: 20px;
+  }
+
+  ol.steps li {
+    margin-bottom: 14px;
+  }
+
+  ol.steps li strong { color: var(--text); }
+  ol.steps li span { color: var(--text-secondary); font-size: 14px; }
+
+  code, pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+
+  pre {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+  }
+
+  code.inline {
+    background: var(--bg-elevated);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+
+  .roadmap-badges {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .badge {
+    font-size: 12.5px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0 48px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  footer .wrap {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  footer a { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top">🚚 Truckload<span class="dot">.</span></a>
+    <nav class="top-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#views">Views</a>
+      <a href="#get-started">Get started</a>
+      <a href="https://github.com/demortes/truckload-twitch-extension">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div id="top"></div>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>Your delivery job, live on stream.</h1>
+    <p class="lede">
+      Truckload is a Twitch Extension for American Truck Simulator and Euro Truck
+      Simulator 2 streamers. Viewers see your current job, route, and truck
+      stats update in real time &mdash; no manual overlay setup required.
+    </p>
+    <div class="cta-row">
+      <a class="btn primary" href="https://github.com/demortes/truckload-twitch-extension/releases/latest">Download the Bridge</a>
+      <a class="btn secondary" href="https://github.com/demortes/truckload-twitch-extension">View on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="section-sub">
+      A small companion app reads your game's live telemetry and relays it
+      through Truckload's backend to every viewer's Twitch Extension, over
+      Twitch's own real-time PubSub &mdash; no polling, no delay.
+    </p>
+    <div class="flow">
+      <div class="step">
+        <div class="num">1</div>
+        <h3>ATS / ETS2</h3>
+        <p>Your game exposes live telemetry via the SCS Telemetry SDK.</p>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <h3>Truckload Bridge</h3>
+        <p>A small app on your PC reads it and sends a normalized snapshot.</p>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <h3>Backend</h3>
+        <p>Validates, stores, and broadcasts it over Twitch PubSub.</p>
+      </div>
+      <div class="step">
+        <div class="num">4</div>
+        <h3>Viewers</h3>
+        <p>See it update live in the panel, overlay, or mobile view.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="views">
+  <div class="wrap">
+    <h2>Five views, one live feed</h2>
+    <p class="section-sub">
+      Every surface reads the same canonical telemetry payload, so the job
+      and truck stats are always consistent no matter how a viewer is
+      watching.
+    </p>
+    <div class="card-grid">
+      <div class="card">
+        <span class="tag">Panel</span>
+        <h3>Below the stream</h3>
+        <p>The full job details and truck stats, always visible under the video player.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Video overlay</span>
+        <h3>On top of the stream</h3>
+        <p>A compact, unobtrusive readout layered directly over the video.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Video component</span>
+        <h3>Corner widget</h3>
+        <p>A small always-on indicator for viewers who want the essentials only.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Mobile</span>
+        <h3>Twitch mobile app</h3>
+        <p>The same live data, laid out for viewers watching on their phone.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Config</span>
+        <h3>Broadcaster dashboard</h3>
+        <p>Generate your ingest key, copy the Bridge command, and see a live connection status.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="get-started">
+  <div class="wrap">
+    <h2>Get started as a streamer</h2>
+    <p class="section-sub">
+      Full walkthrough and troubleshooting live in
+      <a href="https://github.com/demortes/truckload-twitch-extension/blob/main/docs/streamer-setup.md">docs/streamer-setup.md</a>.
+      The short version:
+    </p>
+    <ol class="steps">
+      <li><strong>Install the extension</strong> <span>&mdash; activate the Panel and/or Video Overlay component from your Creator Dashboard.</span></li>
+      <li><strong>Generate your ingest key</strong> <span>&mdash; open the extension's Config page and click "Generate API Key."</span></li>
+      <li>
+        <strong>Download and run the Bridge</strong>
+        <span>&mdash; grab <code class="inline">Truckload.Bridge.exe</code> from the latest release and run the command shown on the Config page:</span>
+        <pre>Truckload.Bridge.exe --ingest-url https://&lt;backend-domain&gt;/api/ingest --key &lt;your-key&gt; --save</pre>
+      </li>
+      <li><strong>Verify</strong> <span>&mdash; start a job in ATS/ETS2; the Config page's Status section should show "Receiving data" within seconds.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="wrap">
+    <h2>What's next</h2>
+    <p class="section-sub">
+      v1.0 covers the core telemetry loop across all five views. Planned
+      follow-ups &mdash; convoy/TruckersMP status, non-Windows Bridge builds,
+      Bits integration, per-viewer settings, and more &mdash; are tracked as
+      <a href="https://github.com/demortes/truckload-twitch-extension/issues">issues on GitHub</a>.
+    </p>
+    <div class="roadmap-badges">
+      <span class="badge">v1.1 &mdash; convoy, accessibility, job history</span>
+      <span class="badge">v1.2 &mdash; Bits, per-viewer settings, i18n</span>
+      <span class="badge">v2.0 &mdash; auto-updater, leaderboards, dashboard</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      MIT licensed. Not affiliated with SCS Software or Twitch Interactive.
+    </div>
+    <div>
+      <a href="https://github.com/demortes/truckload-twitch-extension">Source on GitHub</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
