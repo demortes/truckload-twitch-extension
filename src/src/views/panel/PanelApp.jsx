@@ -1,9 +1,11 @@
 import JobInfo from '../../components/JobInfo';
 import TruckStats from '../../components/TruckStats';
 import Convoy from '../../components/Convoy';
+import RecentDeliveries from '../../components/RecentDeliveries';
 import CollapsibleSection from '../../components/CollapsibleSection';
 import StatusBadge from '../../components/StatusBadge';
 import { useTelemetry } from '../../hooks/useTelemetry';
+import { useJobHistory } from '../../hooks/useJobHistory';
 import { FEATURES } from '../../config/features';
 import './panel.css';
 
@@ -32,8 +34,15 @@ const ConvoyIcon = (
   </svg>
 );
 
+const HistoryIcon = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M20 6L9 17l-5-5" />
+  </svg>
+);
+
 function PanelApp() {
   const { job, truck, convoy, units, connected, stale } = useTelemetry();
+  const history = useJobHistory();
 
   return (
     <div className="panel-view">
@@ -47,6 +56,9 @@ function PanelApp() {
         </CollapsibleSection>
         <CollapsibleSection title="Truck" icon={TruckIcon} defaultExpanded={false}>
           <TruckStats truck={truck} units={units} />
+        </CollapsibleSection>
+        <CollapsibleSection title="Recent Deliveries" icon={HistoryIcon} defaultExpanded={false}>
+          <RecentDeliveries history={history} units={units} />
         </CollapsibleSection>
         {FEATURES.convoy && (
           <CollapsibleSection title="Convoy" icon={ConvoyIcon} defaultExpanded={false}>

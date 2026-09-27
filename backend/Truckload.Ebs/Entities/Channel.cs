@@ -8,4 +8,5 @@ public class Channel
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public TelemetrySnapshot? LatestTelemetry { get; set; }
+    public List<JobHistoryEntry> JobHistory { get; set; } = new();
 }
