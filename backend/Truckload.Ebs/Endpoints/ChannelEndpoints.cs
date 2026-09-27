@@ -54,7 +54,16 @@ public static class ChannelEndpoints
         try
         {
             var secretBytes = Convert.FromBase64String(settings.ExtensionSecret);
-            var handler = new JwtSecurityTokenHandler();
+            var handler = new JwtSecurityTokenHandler
+            {
+                // Without this, JwtSecurityTokenHandler remaps short inbound claim names
+                // (e.g. "role") to long .NET ClaimTypes URIs by default, so
+                // FindFirstValue("role") below would always return null and every
+                // broadcaster request would be rejected as 403 regardless of the token's
+                // actual role. Twitch's own JWTs, and the ones this backend signs itself,
+                // use the short names, so keep them as issued.
+                MapInboundClaims = false,
+            };
             var parameters = new TokenValidationParameters
             {
                 ValidateIssuer = false,
