@@ -12,11 +12,12 @@ function CollapsibleSection({ title, icon, defaultExpanded = false, children }) 
         aria-expanded={expanded}
       >
         <div className="collapsible-title-group">
-          {icon && <span className="collapsible-icon">{icon}</span>}
+          {icon && <span className="collapsible-icon" aria-hidden="true">{icon}</span>}
           <span className="collapsible-title">{title}</span>
         </div>
         <svg
           className="collapsible-chevron"
+          aria-hidden="true"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

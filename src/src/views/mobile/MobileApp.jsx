@@ -21,6 +21,7 @@ function MobileApp() {
             key={tab}
             className={`mobile-tab ${activeTab === tab ? 'active' : ''}`}
             onClick={() => setActiveTab(tab)}
+            aria-current={activeTab === tab ? 'true' : undefined}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>

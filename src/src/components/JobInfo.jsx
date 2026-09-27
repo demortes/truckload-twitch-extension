@@ -6,13 +6,13 @@ function JobInfo({ job, units = 'imperial' }) {
     return (
       <div className="panel">
         <div className="panel-header">
-          <svg className="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="panel-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
             <rect x="9" y="3" width="6" height="4" rx="1" />
           </svg>
           <span className="panel-title">Current Job</span>
         </div>
-        <div className="panel-content">
+        <div className="panel-content" aria-live="polite">
           <div className="info-block">
             <div className="info-value" style={{ color: 'var(--text-muted)' }}>No Active Job</div>
           </div>
@@ -31,13 +31,13 @@ function JobInfo({ job, units = 'imperial' }) {
   return (
     <div className="panel">
       <div className="panel-header">
-        <svg className="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="panel-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
           <rect x="9" y="3" width="6" height="4" rx="1" />
         </svg>
         <span className="panel-title">Current Job</span>
       </div>
-      <div className="panel-content">
+      <div className="panel-content" aria-live="polite">
         <div className="info-row">
           <span className="info-label">Cargo</span>
           <span className="info-value">{job.cargo}</span>
