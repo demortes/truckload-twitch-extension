@@ -14,7 +14,8 @@ public static class IngestEndpoints
             IChannelKeyService keyService,
             ITelemetryService telemetryService,
             ITwitchPubSubService pubSub,
-            IBroadcastThrottle throttle) =>
+            IBroadcastThrottle throttle,
+            ILogger<Program> logger) =>
         {
             var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault()
                       ?? context.Request.Query["key"].FirstOrDefault();
@@ -53,8 +54,12 @@ public static class IngestEndpoints
             }
             catch (JsonException ex)
             {
+                // Log details internally only — the raw exception message can echo back
+                // fragments of the request body / internal type names and shouldn't be
+                // exposed to a caller that only needs to know its payload was rejected.
+                logger.LogInformation(ex, "Rejected malformed ingest payload for channel {ChannelId}", channelId);
                 return Results.Json(
-                    new ErrorResponse { Error = "Invalid telemetry payload", Details = ex.Message },
+                    new ErrorResponse { Error = "Invalid telemetry payload" },
                     statusCode: 400);
             }
 

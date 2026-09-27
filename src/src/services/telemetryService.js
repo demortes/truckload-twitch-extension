@@ -118,7 +118,7 @@ function handlePubSubMessage(_target, _contentType, message) {
 }
 
 export function connectTwitchPubSub() {
-  if (!window.Twitch || !window.Twitch.ext) {
+  if (!window.Twitch?.ext) {
     console.warn('[Telemetry] Twitch Extension Helper not found. Skipping PubSub.');
     return;
   }
@@ -139,7 +139,7 @@ export function initialize(options = {}) {
     fetchInitialState(options.backendUrl, options.channelId);
   }
 
-  if (window.Twitch && window.Twitch.ext) {
+  if (window.Twitch?.ext) {
     connectTwitchPubSub();
   }
 
@@ -156,7 +156,7 @@ export function initialize(options = {}) {
 export function cleanup() {
   stopStaleTracking();
   stopTruckyPolling();
-  if (window.Twitch && window.Twitch.ext && listening) {
+  if (window.Twitch?.ext && listening) {
     window.Twitch.ext.unlisten('broadcast', handlePubSubMessage);
     listening = false;
   }
