@@ -40,8 +40,11 @@ public class IngestEndpointTests : IClassFixture<TestWebAppFactory>
         return (client, channelId, keyResponse!.IngestKey);
     }
 
-    private static StringContent Json(object payload) =>
-        new(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+    private static StringContent Json(TelemetryPayload payload) =>
+        // Must match the camelCase contract the real endpoint expects (and that the bridge
+        // actually sends); a plain JsonSerializer.Serialize(payload) here would emit PascalCase
+        // property names and every "valid payload" test would be rejected as malformed.
+        new(JsonSerializer.Serialize(payload, TelemetryJsonContext.Default.TelemetryPayload), Encoding.UTF8, "application/json");
 
     [Fact]
     public async Task Ingest_WithoutApiKey_Returns401()

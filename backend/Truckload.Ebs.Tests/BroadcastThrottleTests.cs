@@ -24,8 +24,12 @@ public class BroadcastThrottleTests : IClassFixture<TestWebAppFactory>
         Job: new JobInfo(true, "Electronics", "Los Angeles", "Phoenix", 372, 245),
         Truck: new TruckInfo("Peterbilt", "579", "TRK-4521", 67, 3, 124532));
 
-    private static StringContent Json(object payload) =>
-        new(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+    private static StringContent Json(TelemetryPayload payload) =>
+        // Must match the camelCase contract the real endpoint expects; a plain
+        // JsonSerializer.Serialize(payload) call here emits PascalCase property names and
+        // every ingest in this test would be rejected as malformed before it ever reaches
+        // the throttle logic under test.
+        new(JsonSerializer.Serialize(payload, TelemetryJsonContext.Default.TelemetryPayload), Encoding.UTF8, "application/json");
 
     [Fact]
     public async Task SecondIngestWithinInterval_IsThrottled_ThenSendsAfterTimeAdvances()
