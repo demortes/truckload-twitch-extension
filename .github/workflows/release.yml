@@ -44,8 +44,18 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/truckload-ebs:latest
 
   bridge:
-    name: Publish bridge exe
-    runs-on: windows-latest
+    name: Publish bridge exe (${{ matrix.rid }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+          - rid: linux-x64
+            os: ubuntu-latest
+          - rid: osx-x64
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,22 +68,23 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Publish self-contained single-file exe
+        shell: bash
         run: |
-          dotnet publish bridge/Truckload.Bridge -c Release -r win-x64 --self-contained `
-            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
-            -p:Version=${{ steps.version.outputs.version }} `
+          dotnet publish bridge/Truckload.Bridge -c Release -r ${{ matrix.rid }} --self-contained \
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:Version=${{ steps.version.outputs.version }} \
             -o publish/bridge
       - name: Zip release asset
         shell: bash
         run: |
           cp bridge/README.md publish/bridge/README.md
           cd publish/bridge
-          7z a ../../Truckload.Bridge-win-x64-v${{ steps.version.outputs.version }}.zip .
+          7z a ../../Truckload.Bridge-${{ matrix.rid }}-v${{ steps.version.outputs.version }}.zip .
       - name: Upload bridge artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bridge-release-asset
-          path: Truckload.Bridge-win-x64-v*.zip
+          name: bridge-release-asset-${{ matrix.rid }}
+          path: Truckload.Bridge-${{ matrix.rid }}-v*.zip
 
   frontend:
     name: Build and zip frontend

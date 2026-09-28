@@ -1,21 +1,29 @@
 # Truckload Bridge
 
-A small Windows console app that reads live ATS/ETS2 telemetry from a local
+A small console app that reads live ATS/ETS2 telemetry from a local
 [Funbit-compatible telemetry server](https://github.com/Funbit/ets2-telemetry-server)
 and sends it to your Truckload Twitch extension backend, so your viewers see
-your current job and truck stats live.
+your current job and truck stats live. It's released as a self-contained
+build for Windows, Linux and macOS — no separate .NET install needed on any
+of them.
 
 ## Requirements
 
-- Windows 10/11 (the released build is `win-x64`, self-contained — no separate
-  .NET install needed).
+- Windows 10/11, Linux (native or via Proton), or macOS.
 - The ETS2/ATS Telemetry SDK plugin and a telemetry web server running locally
   (default `http://localhost:25555/api/ets2/telemetry`). Most telemetry
-  overlays for these games use this same server under the hood.
+  overlays for these games use this same server under the hood, regardless of
+  OS.
 - An ingest URL and API key from the extension's **Config** page on your
   Twitch channel dashboard.
 
 ## Quick start
+
+Download the zip for your OS from the [releases page](../../releases) and
+extract it, then run the bridge from a terminal (or double-click it on
+Windows).
+
+### Windows
 
 ```
 Truckload.Bridge.exe --ingest-url https://your-backend-domain/api/ingest --key <your-key>
@@ -29,11 +37,43 @@ Truckload.Bridge.exe --ingest-url https://your-backend-domain/api/ingest --key <
 Truckload.Bridge.exe
 ```
 
-Press `Ctrl+C` to stop.
+### Linux
+
+ATS/ETS2 on Linux (native or via Proton) exposes the same local telemetry
+server, so the bridge works the same way — just run the Linux binary instead
+of the `.exe`. You may need to mark it executable after extracting the zip:
+
+```
+chmod +x Truckload.Bridge
+./Truckload.Bridge --ingest-url https://your-backend-domain/api/ingest --key <your-key>
+```
+
+Add `--save` the first time to persist those values to `truckload-bridge.json`
+next to the binary:
+
+```
+./Truckload.Bridge --ingest-url https://your-backend-domain/api/ingest --key <your-key> --save
+./Truckload.Bridge
+```
+
+### macOS
+
+Same as Linux — mark the binary executable and run it from a terminal. The
+first launch may require allowing it in **System Settings → Privacy &
+Security**, since it isn't notarized/signed.
+
+```
+chmod +x Truckload.Bridge
+./Truckload.Bridge --ingest-url https://your-backend-domain/api/ingest --key <your-key> --save
+./Truckload.Bridge
+```
+
+Press `Ctrl+C` to stop, on any OS.
 
 ## Options
 
-Run `Truckload.Bridge.exe --help` for the full list. The important ones:
+Run `Truckload.Bridge --help` (or `Truckload.Bridge.exe --help` on Windows)
+for the full list. The important ones:
 
 | Option | Purpose |
 |---|---|
@@ -62,6 +102,8 @@ reviewers who need to see live data without installing the game:
 ```
 Truckload.Bridge.exe --demo --ingest-url https://your-backend-domain/api/ingest --key <your-key>
 ```
+
+(`./Truckload.Bridge --demo ...` on Linux/macOS.)
 
 ## Troubleshooting
 
