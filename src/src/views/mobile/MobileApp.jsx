@@ -33,6 +33,7 @@ function MobileApp() {
             key={tab}
             className={`mobile-tab ${activeTab === tab ? 'active' : ''}`}
             onClick={() => setActiveTab(tab)}
+            aria-current={activeTab === tab ? 'true' : undefined}
           >
             {TAB_LABELS[tab]}
           </button>

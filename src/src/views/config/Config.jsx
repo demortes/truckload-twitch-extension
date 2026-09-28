@@ -171,7 +171,7 @@ function Config() {
           telemetry from ATS/ETS2 to your viewers.
         </p>
 
-        {error && <div className="config-alert">{error}</div>}
+        {error && <div className="config-alert" role="alert">{error}</div>}
 
         {!keyData ? (
           <div className="config-section config-section-centered">
@@ -198,7 +198,11 @@ function Config() {
               <p className="config-muted">Paste this command into a terminal in the same folder as the exe:</p>
               <div className="config-copy-row">
                 <code className="config-code-block">{bridgeCommand}</code>
-                <button className="config-button" onClick={() => copyToClipboard(bridgeCommand, 'cmd')}>
+                <button
+                  className="config-button"
+                  onClick={() => copyToClipboard(bridgeCommand, 'cmd')}
+                  aria-live="polite"
+                >
                   {copied === 'cmd' ? 'Copied!' : 'Copy'}
                 </button>
               </div>
@@ -211,8 +215,18 @@ function Config() {
             <div className="config-section">
               <h2>Ingest key</h2>
               <div className="config-copy-row">
-                <input className="config-input" type="text" value={keyData.ingestKey} readOnly />
-                <button className="config-button" onClick={() => copyToClipboard(keyData.ingestKey, 'key')}>
+                <input
+                  className="config-input"
+                  type="text"
+                  value={keyData.ingestKey}
+                  readOnly
+                  aria-label="Ingest key"
+                />
+                <button
+                  className="config-button"
+                  onClick={() => copyToClipboard(keyData.ingestKey, 'key')}
+                  aria-live="polite"
+                >
                   {copied === 'key' ? 'Copied!' : 'Copy'}
                 </button>
               </div>
@@ -261,7 +275,15 @@ function Config() {
             <div className="config-section">
               <h2>Status</h2>
               <div className="config-status-row">
-                <span className={`config-status-dot ${isLive ? 'live' : 'offline'}`} />
+                <span className={`config-status-dot ${isLive ? 'live' : 'offline'}`} aria-hidden="true" />
+                {/*
+                  Not an aria-live region: the "last update Ns ago" text
+                  changes every 5s for as long as the page is open (see
+                  useNow(5000) above), so making it a live region would have
+                  a screen reader re-announce it every 5 seconds indefinitely.
+                  The live/offline word itself is still available on demand
+                  to anyone reading this section.
+                */}
                 <span>
                   {isLive
                     ? `Receiving data (last update ${secondsAgo}s ago)`

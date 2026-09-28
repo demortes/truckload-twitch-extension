@@ -19,19 +19,20 @@ function ComponentApp() {
       <button
         className="component-toggle"
         onClick={() => setExpanded(!expanded)}
-        aria-label={expanded ? 'Collapse' : 'Expand'}
+        aria-expanded={expanded}
+        aria-label={`${expanded ? 'Collapse' : 'Expand'} Truckload panel (${offline ? 'offline' : 'live'})`}
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="1" y="3" width="15" height="13" rx="2" />
           <path d="M16 8h4l3 3v5h-7V8z" />
           <circle cx="5.5" cy="18.5" r="2.5" />
           <circle cx="18.5" cy="18.5" r="2.5" />
         </svg>
-        <span className={`component-status-dot ${offline ? 'offline' : ''}`} />
+        <span className={`component-status-dot ${offline ? 'offline' : ''}`} aria-hidden="true" />
       </button>
 
       {expanded && (
-        <div className="component-content">
+        <div className="component-content" aria-live="polite">
           {job?.active && (
             <div className="component-section">
               <div className="component-row">
