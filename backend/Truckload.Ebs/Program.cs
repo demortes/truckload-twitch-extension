@@ -51,6 +51,7 @@ app.UseCors();
 app.MapHealthEndpoints();
 app.MapIngestEndpoints();
 app.MapTelemetryEndpoints();
+app.MapJobHistoryEndpoints();
 app.MapChannelEndpoints();
 
 if (args.Contains("--migrate-only"))

@@ -89,3 +89,38 @@
 .info-block .info-label {
   margin-top: var(--spacing-xs);
 }
+
+/* Recent deliveries list */
+.job-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.job-history-item {
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.job-history-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.job-history-cargo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.job-history-route {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.job-history-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
