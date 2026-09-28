@@ -7,7 +7,9 @@
 
 export { default as truckyApi } from './truckyApi';
 export { default as telemetryService } from './telemetryService';
+export { default as convoyConfig } from './convoyConfig';
 
 // Named exports for direct function imports
 export * from './truckyApi';
 export * from './telemetryService';
+export * from './convoyConfig';

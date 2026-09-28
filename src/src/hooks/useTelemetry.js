@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { telemetryService } from '../services';
+import { getConfiguredPlayerIds, onConfigurationChanged } from '../services/convoyConfig';
+import { FEATURES } from '../config/features';
 import mockTelemetry from '../dev/mockTelemetry';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
@@ -27,8 +29,17 @@ export function useTelemetry() {
       telemetryService.initialize({
         backendUrl: BACKEND_URL,
         channelId: auth.channelId,
+        playerIds: getConfiguredPlayerIds(),
       });
     });
+
+    if (FEATURES.convoy) {
+      // Picks up the broadcaster's saved player IDs without a reload, both on
+      // first load and whenever they're edited on the config view.
+      onConfigurationChanged((playerIds) => {
+        telemetryService.startTruckyPolling(playerIds);
+      });
+    }
 
     return () => {
       unsubscribe();

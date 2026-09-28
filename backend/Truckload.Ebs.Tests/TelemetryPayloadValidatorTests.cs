@@ -39,4 +39,38 @@ public class TelemetryPayloadValidatorTests
     [Fact]
     public void Validate_AllowsNullJobAndTruckWhenDisconnected() =>
         Assert.Empty(TelemetryPayloadValidator.Validate(Valid with { Connected = false, Job = null, Truck = null, Game = null }));
+
+    [Fact]
+    public void Validate_AllowsNullEvents() =>
+        Assert.Empty(TelemetryPayloadValidator.Validate(Valid with { Events = null }));
+
+    [Fact]
+    public void Validate_AcceptsAWellFormedEvent() =>
+        Assert.Empty(TelemetryPayloadValidator.Validate(Valid with
+        {
+            Events = new[] { new TelemetryEvent("crash", "warning", "Damage jumped 20% - possible crash.") },
+        }));
+
+    [Fact]
+    public void Validate_RejectsUnknownEventSeverity() =>
+        Assert.NotEmpty(TelemetryPayloadValidator.Validate(Valid with
+        {
+            Events = new[] { new TelemetryEvent("crash", "catastrophic", "Damage jumped 20%.") },
+        }));
+
+    [Fact]
+    public void Validate_RejectsEmptyEventMessage() =>
+        Assert.NotEmpty(TelemetryPayloadValidator.Validate(Valid with
+        {
+            Events = new[] { new TelemetryEvent("crash", "warning", "") },
+        }));
+
+    [Fact]
+    public void Validate_RejectsTooManyEvents() =>
+        Assert.NotEmpty(TelemetryPayloadValidator.Validate(Valid with
+        {
+            Events = Enumerable.Range(0, 6)
+                .Select(i => new TelemetryEvent("crash", "warning", $"event {i}"))
+                .ToArray(),
+        }));
 }

@@ -1,9 +1,19 @@
 import { useEffect, useState } from 'react';
+import { FEATURES } from '../../config/features';
+import { getConfiguredPlayerIds, onConfigurationChanged, savePlayerIds } from '../../services/convoyConfig';
 import '../../index.css';
 import './config.css';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
 const BRIDGE_RELEASES_URL = 'https://github.com/demortes/truckload-twitch-extension/releases/latest';
+
+/** Splits on commas and/or newlines, trims, and drops empty entries. */
+function parsePlayerIdsInput(text) {
+  return text
+    .split(/[\n,]+/)
+    .map((id) => id.trim())
+    .filter(Boolean);
+}
 
 function useNow(refreshMs) {
   const [now, setNow] = useState(Date.now);
@@ -22,6 +32,10 @@ function Config() {
   const [copied, setCopied] = useState(null);
   const [status, setStatus] = useState(null);
   const [confirmingRegen, setConfirmingRegen] = useState(false);
+  const [convoyInput, setConvoyInput] = useState(() =>
+    FEATURES.convoy && window.Twitch?.ext ? getConfiguredPlayerIds().join('\n') : ''
+  );
+  const [convoySaved, setConvoySaved] = useState(false);
 
   const now = useNow(5000); // refreshed periodically so "last data received Ns ago" stays fresh
 
@@ -51,6 +65,14 @@ function Config() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    if (!FEATURES.convoy || !window.Twitch?.ext) return undefined;
+
+    onConfigurationChanged((playerIds) => setConvoyInput(playerIds.join('\n')));
+
+    return undefined;
   }, []);
 
   useEffect(() => {
@@ -97,6 +119,12 @@ function Config() {
   const regenerateKey = async () => {
     setConfirmingRegen(false);
     await generateKey();
+  };
+
+  const saveConvoyPlayerIds = () => {
+    savePlayerIds(parsePlayerIdsInput(convoyInput));
+    setConvoySaved(true);
+    setTimeout(() => setConvoySaved(false), 2000);
   };
 
   const copyToClipboard = (text, label) => {
@@ -207,6 +235,28 @@ function Config() {
                 </button>
               )}
             </div>
+
+            {FEATURES.convoy && (
+              <div className="config-section">
+                <h2>Convoy (TruckersMP)</h2>
+                <p className="config-muted">
+                  Show a convoy panel for your viewers by listing your convoy's TruckersMP/Trucky
+                  player IDs below, one per line (or comma-separated). Leave empty to hide it.
+                </p>
+                <textarea
+                  className="config-textarea"
+                  rows={4}
+                  placeholder={'123456\n789012'}
+                  value={convoyInput}
+                  onChange={(e) => setConvoyInput(e.target.value)}
+                />
+                <div className="config-copy-row">
+                  <button className="config-button" onClick={saveConvoyPlayerIds}>
+                    {convoySaved ? 'Saved!' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="config-section">
               <h2>Status</h2>

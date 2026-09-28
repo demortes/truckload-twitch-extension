@@ -4,6 +4,7 @@ import Convoy from '../../components/Convoy';
 import RecentDeliveries from '../../components/RecentDeliveries';
 import CollapsibleSection from '../../components/CollapsibleSection';
 import StatusBadge from '../../components/StatusBadge';
+import EventToast from '../../components/EventToast';
 import { useTelemetry } from '../../hooks/useTelemetry';
 import { useJobHistory } from '../../hooks/useJobHistory';
 import { FEATURES } from '../../config/features';
@@ -41,11 +42,12 @@ const HistoryIcon = (
 );
 
 function PanelApp() {
-  const { job, truck, convoy, units, connected, stale } = useTelemetry();
+  const { job, truck, convoy, units, connected, stale, events } = useTelemetry();
   const history = useJobHistory();
 
   return (
     <div className="panel-view">
+      <EventToast events={events} />
       <div className="panel-header-bar">
         <span className="panel-logo">TRUCKLOAD</span>
         <StatusBadge connected={connected} stale={stale} />

@@ -84,6 +84,19 @@
   white-space: nowrap;
 }
 
+.config-textarea {
+  width: 100%;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--text-primary);
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 12px;
+  resize: vertical;
+  margin-bottom: var(--spacing-sm);
+}
+
 .config-button {
   background: var(--accent-orange);
   color: #1a1006;

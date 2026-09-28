@@ -12,7 +12,8 @@ public sealed record TelemetryPayload(
     string? Game,
     string Units,
     JobInfo? Job,
-    TruckInfo? Truck
+    TruckInfo? Truck,
+    IReadOnlyList<TelemetryEvent>? Events = null
 );
 
 public sealed record JobInfo(
@@ -31,4 +32,17 @@ public sealed record TruckInfo(
     int FuelPercent,
     int DamagePercent,
     int Odometer
+);
+
+/// <summary>
+/// A one-off, transient in-game event (e.g. a crash) detected by the bridge since its
+/// last tick. Unlike the rest of the payload, which is a full re-sent snapshot of
+/// steady-state, <see cref="TelemetryPayload.Events"/> is only populated on the tick
+/// where something noteworthy happened and is null/omitted otherwise — consumers should
+/// treat it as "something happened just now", not as ongoing state to keep displaying.
+/// </summary>
+public sealed record TelemetryEvent(
+    string Type,
+    string Severity,
+    string Message
 );
