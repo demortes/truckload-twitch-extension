@@ -130,9 +130,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
+        # Restricted to our own release-asset artifacts. Without a pattern,
+        # this also tries to pull docker/build-push-action's auto-uploaded
+        # build-record artifact (name like `<owner>~<repo>~<hash>.dockerbuild`
+        # from the backend-image job), which isn't a zip and reliably fails
+        # to download/extract, failing this job even though every real asset
+        # already downloaded successfully.
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: '*-release-asset*'
           merge-multiple: true
       - name: Create draft release
         env:
