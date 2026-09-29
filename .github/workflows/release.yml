@@ -101,11 +101,13 @@ jobs:
         run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
       - name: Set up Node
         # This is a publish job, so caching is disabled to avoid a poisoned
-        # cache reaching a released artifact (cache: false, not 'npm').
+        # cache reaching a released artifact. actions/setup-node@v4 only
+        # accepts '' / 'npm' / 'yarn' / 'pnpm' for `cache` — `false` is
+        # stringified to "false" and rejected ("Caching for 'false' is not
+        # supported"). Omitting the input entirely is how caching is disabled.
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: false
       - name: Install dependencies
         run: npm ci
       - name: Build with the production backend URL
