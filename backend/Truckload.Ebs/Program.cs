@@ -1,11 +1,44 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Truckload.Ebs.Configuration;
 using Truckload.Ebs.Data;
 using Truckload.Ebs.Endpoints;
+using Truckload.Ebs.Logging;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using Truckload.Ebs.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Logging: single-line JSON to stdout using Datadog's reserved attributes (level/timestamp/
+// message/error.*). Configured first so everything after (options validation, host build,
+// migrations, DB connection) is logged in this format.
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole(o =>
+{
+    o.FormatterName = DatadogJsonFormatter.FormatterName;
+    o.IncludeScopes = true; // carries the tracer's dd.trace_id / dd.span_id for log-trace correlation
+});
+builder.Logging.AddConsoleFormatter<DatadogJsonFormatter, Microsoft.Extensions.Logging.Console.ConsoleFormatterOptions>();
+
+// OpenTelemetry metrics -> OTLP (Datadog Agent's OTLP receiver). Endpoint/protocol/temporality come
+// from the standard OTEL_* env vars (see compose files). Traces are handled by the Datadog tracer,
+// so only metrics are enabled here to avoid duplicate spans.
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r
+        .AddService(
+            serviceName: builder.Configuration["DD_SERVICE"] ?? "truckload-ebs",
+            serviceVersion: builder.Configuration["DD_VERSION"])
+        .AddAttributes([new("deployment.environment.name", builder.Configuration["DD_ENV"] ?? "unknown")]))
+    .WithMetrics(m => m
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddMeter(AppMetrics.MeterName)
+        .AddMeter("Npgsql")
+        .AddMeter("Microsoft.EntityFrameworkCore")
+        .AddOtlpExporter());
 
 // Configuration
 builder.Services.AddOptions<TwitchSettings>()
@@ -16,15 +49,8 @@ builder.Services.AddSingleton<IValidateOptions<TwitchSettings>, TwitchSettingsVa
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("Database"));
 
 // Database
-// TEMPORARY: PendingModelChangesWarning suppressed to unblock startup while the real
-// mismatch between AppDbContextModelSnapshot and the live model (almost certainly in the
-// hand-authored AddJobHistory migration/snapshot, never run through the real `dotnet ef`
-// tool) is diagnosed with an actual dotnet-ef run. Remove this once that's fixed — see
-// https://aka.ms/efcore-docs-pending-changes. Suppressing it, rather than fixing the root
-// cause, risks silently applying a schema that doesn't match the compiled model.
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
-           .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Services
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
@@ -61,23 +87,34 @@ app.MapTelemetryEndpoints();
 app.MapJobHistoryEndpoints();
 app.MapChannelEndpoints();
 
-if (args.Contains("--migrate-only"))
+try
 {
-    using var migrateScope = app.Services.CreateScope();
-    var migrateDb = migrateScope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await migrateDb.Database.MigrateAsync();
-    return;
-}
+    if (args.Contains("--migrate-only"))
+    {
+        using var migrateScope = app.Services.CreateScope();
+        var migrateDb = migrateScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await migrateDb.Database.MigrateAsync();
+        return 0;
+    }
 
-var dbSettings = app.Services.GetRequiredService<IOptions<DatabaseSettings>>().Value;
-if (dbSettings.AutoMigrate)
+    var dbSettings = app.Services.GetRequiredService<IOptions<DatabaseSettings>>().Value;
+    if (dbSettings.AutoMigrate)
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.MigrateAsync();
+    }
+
+    app.Run();
+    return 0;
+}
+catch (Exception ex) when (ex is not HostAbortedException)
 {
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
+    // Startup failures (e.g. DB unreachable during migration) must also be JSON on stdout,
+    // not the runtime's plain-text unhandled-exception dump.
+    app.Logger.LogCritical(ex, "Application terminated unexpectedly during startup or run");
+    return 1;
 }
-
-app.Run();
 
 // Exposes the implicit Program class for WebApplicationFactory<Program> in the test project.
 public partial class Program;

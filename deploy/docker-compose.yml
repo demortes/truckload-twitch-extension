@@ -8,9 +8,9 @@ services:
   caddy:
     image: caddy:2-alpine
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"
     environment:
       - DOMAIN=${DOMAIN}
       - ACME_EMAIL=${ACME_EMAIL}
@@ -18,20 +18,37 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    labels:
+      com.datadoghq.tags.service: truckload-caddy
+      com.datadoghq.tags.env: ${DD_ENV:-production}
+      com.datadoghq.tags.version: "2"
+      com.datadoghq.ad.logs: '[{"source":"caddy","service":"truckload-caddy"}]'
     depends_on:
       - backend
     restart: unless-stopped
 
   backend:
     image: ghcr.io/${GHCR_OWNER}/truckload-ebs:${TAG:-latest}
-    expose:
-      - "8080"
+    # Container listens on 25846 (uncommon on purpose, to avoid host port collisions). Published so
+    # the API is also reachable directly on the host; Caddy uses the internal network address.
+    ports:
+      - "${BACKEND_PORT:-25846}:25846"
     environment:
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=truckload;Username=${POSTGRES_USER:-truckload};Password=${POSTGRES_PASSWORD}
       - Twitch__ClientId=${TWITCH_EXTENSION_CLIENT_ID}
       - Twitch__ExtensionSecret=${TWITCH_EXTENSION_SECRET}
       - ASPNETCORE_ENVIRONMENT=Production
       - Database__AutoMigrate=true
+      - DD_ENV=${DD_ENV:-production}
+      - DD_AGENT_HOST=host.docker.internal
+      - DD_TRACE_ENABLED=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://host.docker.internal:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=delta
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    labels:
+      com.datadoghq.tags.env: ${DD_ENV:-production}
     depends_on:
       db:
         condition: service_healthy
@@ -45,6 +62,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    labels:
+      com.datadoghq.tags.service: truckload-db
+      com.datadoghq.tags.env: ${DD_ENV:-production}
+      com.datadoghq.tags.version: "16"
+      com.datadoghq.ad.logs: '[{"source":"postgresql","service":"truckload-db"}]'
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-truckload} -d truckload"]
       interval: 5s

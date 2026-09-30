@@ -25,4 +25,26 @@ public class HealthEndpointTests : IClassFixture<TestWebAppFactory>
         Assert.Equal("ok", body!.Status);
         Assert.Equal("ok", body.Db);
     }
+
+    [Fact]
+    public async Task Ready_ReturnsOk_WhenDatabaseIsReachable()
+    {
+        await _factory.EnsureDatabaseCreatedAsync();
+        var response = await _factory.CreateClient().GetAsync("/api/health/ready");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<HealthResponse>();
+        Assert.Equal("ok", body!.Db);
+    }
+
+    [Fact]
+    public async Task Live_ReturnsOk_WithoutCheckingDatabase()
+    {
+        var response = await _factory.CreateClient().GetAsync("/api/health/live");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<HealthResponse>();
+        Assert.Equal("ok", body!.Status);
+        Assert.Equal("unchecked", body.Db);
+    }
 }

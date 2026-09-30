@@ -12,19 +12,32 @@ public static class HealthEndpoints
 
     public static void MapHealthEndpoints(this WebApplication app)
     {
-        app.MapGet("/api/health", async (AppDbContext db) =>
+        // Liveness: process is up and serving. Deliberately does not touch the database, so a DB
+        // outage doesn't get the container restarted (Docker HEALTHCHECK / k8s liveness use this).
+        app.MapGet("/api/health/live", () => Results.Ok(new HealthResponse
         {
-            var dbOk = await CanConnectAsync(db);
+            Status = "ok",
+            Version = Version,
+            Db = "unchecked",
+        }));
 
-            var response = new HealthResponse
-            {
-                Status = dbOk ? "ok" : "degraded",
-                Version = Version,
-                Db = dbOk ? "ok" : "error",
-            };
+        // Readiness (also served at /api/health for backwards compatibility): includes a DB check.
+        app.MapGet("/api/health/ready", CheckReadinessAsync);
+        app.MapGet("/api/health", CheckReadinessAsync);
+    }
 
-            return dbOk ? Results.Ok(response) : Results.Json(response, statusCode: 503);
-        });
+    private static async Task<IResult> CheckReadinessAsync(AppDbContext db)
+    {
+        var dbOk = await CanConnectAsync(db);
+
+        var response = new HealthResponse
+        {
+            Status = dbOk ? "ok" : "degraded",
+            Version = Version,
+            Db = dbOk ? "ok" : "error",
+        };
+
+        return dbOk ? Results.Ok(response) : Results.Json(response, statusCode: 503);
     }
 
     private static async Task<bool> CanConnectAsync(AppDbContext db)

@@ -33,3 +33,6 @@ npm-debug.log*
 # Twitch extension specific
 *.zip
 *.pem
+
+# Test results (JUnit, uploaded to Datadog in CI)
+test-results/

@@ -38,6 +38,8 @@ jobs:
   dotnet:
     name: .NET (build + test)
     runs-on: ubuntu-latest
+    env:
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,7 +52,21 @@ jobs:
       - name: Build
         run: dotnet build Truckload.slnx -c Release --no-restore
       - name: Test
-        run: dotnet test Truckload.slnx -c Release --no-build
+        run: >
+          dotnet test Truckload.slnx -c Release --no-build
+          --logger "junit;LogFilePath=${{ github.workspace }}/test-results/{assembly}.xml"
+      - name: Upload test results to Datadog
+        # Only when the DD_API_KEY secret exists (not available to fork PRs).
+        if: ${{ always() && env.DD_API_KEY != '' }}
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_SITE: ${{ vars.DD_SITE || 'datadoghq.com' }}
+        run: >
+          npx --yes @datadog/datadog-ci junit upload
+          --service truckload-twitch-extension
+          --env ci
+          --tags team:truckload
+          test-results
       - name: Smoke-test bridge publish (win-x64 single file)
         run: |
           dotnet publish bridge/Truckload.Bridge -c Release -r win-x64 --self-contained \
@@ -63,10 +79,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Docker metadata (OCI labels)
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/truckload-ebs
       - name: Build backend image (no push)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: backend/Truckload.Ebs/Dockerfile
           push: false
+          build-args: |
+            VERSION=0.0.0-ci
+            GIT_SHA=${{ github.sha }}
+            BUILD_DATE=${{ steps.meta.outputs.created }}
+            SOURCE_URL=${{ github.server_url }}/${{ github.repository }}
+          labels: ${{ steps.meta.outputs.labels }}
