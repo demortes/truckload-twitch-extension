@@ -43,7 +43,7 @@ Run the backend locally against Postgres in Docker:
 cd backend
 cp .env.example .env   # fill in a Twitch client id + base64 secret (any 32 random bytes work for local dev)
 docker compose up -d
-curl http://localhost:8080/api/health
+curl http://localhost:25846/api/health
 ```
 
 Mint a dev broadcaster JWT to exercise the key-management endpoint without a
@@ -56,7 +56,7 @@ node scripts/mint-dev-jwt.mjs --channel 12345 --secret <the same base64 secret>
 Run the bridge against it in demo mode (no game required):
 
 ```bash
-dotnet run --project bridge/Truckload.Bridge -- --demo --ingest-url http://localhost:8080/api/ingest --key <key from the Config page/API>
+dotnet run --project bridge/Truckload.Bridge -- --demo --ingest-url http://localhost:25846/api/ingest --key <key from the Config page/API>
 ```
 
 ### Frontend (Node 22, React 19, Vite)

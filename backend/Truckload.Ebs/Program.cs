@@ -4,22 +4,23 @@ using Microsoft.Extensions.Options;
 using Truckload.Ebs.Configuration;
 using Truckload.Ebs.Data;
 using Truckload.Ebs.Endpoints;
+using Truckload.Ebs.Logging;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using Truckload.Ebs.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Logging: single-line JSON to stdout for Datadog. Configured first so everything after
-// (options validation, host build, migrations, DB connection) is logged in this format.
+// Logging: single-line JSON to stdout using Datadog's reserved attributes (level/timestamp/
+// message/error.*). Configured first so everything after (options validation, host build,
+// migrations, DB connection) is logged in this format.
 builder.Logging.ClearProviders();
-builder.Logging.AddJsonConsole(o =>
+builder.Logging.AddConsole(o =>
 {
-    o.IncludeScopes = true;
-    o.UseUtcTimestamp = true;
-    o.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ";
-    o.JsonWriterOptions = new System.Text.Json.JsonWriterOptions { Indented = false };
+    o.FormatterName = DatadogJsonFormatter.FormatterName;
+    o.IncludeScopes = true; // carries the tracer's dd.trace_id / dd.span_id for log-trace correlation
 });
+builder.Logging.AddConsoleFormatter<DatadogJsonFormatter, Microsoft.Extensions.Logging.Console.ConsoleFormatterOptions>();
 
 // OpenTelemetry metrics -> OTLP (Datadog Agent's OTLP receiver). Endpoint/protocol/temporality come
 // from the standard OTEL_* env vars (see compose files). Traces are handled by the Datadog tracer,

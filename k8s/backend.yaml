@@ -63,13 +63,13 @@ spec:
                   key: TWITCH_EXTENSION_SECRET
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /api/health/live
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 15
           readinessProbe:
             httpGet:
-              path: /api/health
+              path: /api/health/ready
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 5

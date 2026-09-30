@@ -49,8 +49,8 @@ COPY --from=build /app .
 # Pick the native profiler matching the image architecture (buildx sets TARGETARCH).
 RUN case "${TARGETARCH:-amd64}" in         arm64) ARCH=linux-arm64 ;;         *)     ARCH=linux-x64 ;;     esac     && ln -s /app/datadog/$ARCH/Datadog.Trace.ClrProfiler.Native.so /app/datadog/Datadog.Trace.ClrProfiler.Native.so     && mkdir -p /var/log/datadog && chmod 777 /var/log/datadog
 ENV CORECLR_PROFILER_PATH=/app/datadog/Datadog.Trace.ClrProfiler.Native.so
-EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 25846
+ENV ASPNETCORE_URLS=http://+:25846
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
-    CMD curl -f http://localhost:8080/api/health || exit 1
+    CMD curl -f http://localhost:25846/api/health/live || exit 1
 ENTRYPOINT ["dotnet", "Truckload.Ebs.dll"]

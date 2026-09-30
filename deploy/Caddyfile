@@ -4,6 +4,6 @@
 
 {$DOMAIN} {
 	encode gzip
-	reverse_proxy backend:8080
+	reverse_proxy backend:25846
 	header -Server
 }

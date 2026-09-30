@@ -6,7 +6,7 @@ services:
       context: ..
       dockerfile: backend/Truckload.Ebs/Dockerfile
     ports:
-      - "${BACKEND_PORT:-8080}:8080"
+      - "${BACKEND_PORT:-25846}:25846"
     environment:
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=truckload;Username=${POSTGRES_USER:-truckload};Password=${POSTGRES_PASSWORD:-truckload}
       - Twitch__ClientId=${TWITCH_EXTENSION_CLIENT_ID}
@@ -36,7 +36,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-25847}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-truckload} -d truckload"]
       interval: 5s
