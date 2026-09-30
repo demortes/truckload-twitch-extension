@@ -136,6 +136,16 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm ci
+      - name: Require production backend URL
+        # Without this the frontend silently falls back to http://localhost:8080, which
+        # cannot work from a viewer's/broadcaster's browser.
+        env:
+          BACKEND_URL: ${{ vars.BACKEND_URL }}
+        run: |
+          case "$BACKEND_URL" in
+            https://*) ;;
+            *) echo "::error::Set the BACKEND_URL repository variable to the backend's public HTTPS URL (Settings > Secrets and variables > Actions > Variables)."; exit 1 ;;
+          esac
       - name: Build with the production backend URL
         run: npm run build
         env:
