@@ -36,3 +36,5 @@ npm-debug.log*
 
 # Test results (JUnit, uploaded to Datadog in CI)
 test-results/
+installer/staging/
+installer/output/
