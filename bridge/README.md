@@ -26,6 +26,11 @@ of them.
 
 ## Quick start
 
+On Windows, the easiest route is the `TruckloadSetup` installer from the
+[releases page](../../releases): it installs the Bridge and the TruckTel plugin,
+finds your games, and saves your ingest key. The steps below are the manual
+route (and the only one on Linux/macOS).
+
 Download the zip for your OS from the [releases page](../../releases) and
 extract it, then run the bridge from a terminal (or double-click it on
 Windows).
