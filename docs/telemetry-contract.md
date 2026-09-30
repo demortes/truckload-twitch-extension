@@ -102,6 +102,21 @@ existing steady-state stats.
 - `distance`, `odometer`, `etaMinutes` ≥ 0.
 - Unknown top-level fields are rejected, not silently dropped.
 
+## TruckTel source (default)
+
+By default the bridge reads the [TruckTel](https://github.com/jvanstraten/TruckTel)
+plugin's REST API (`/api/rest/flat/<prefix>` for `game`, `frame`, `truck`, `job`
+and `trailer`, port 8080 by default). Its flat JSON uses the SCS telemetry SDK's
+own key names (`truck.fuel.amount`, `job.destination.city`, `truck.wear.engine`,
+...). `bridge/Truckload.Bridge/TruckTel/TruckTelMapper.cs` converts that into the
+same intermediate model the Funbit source uses, so the contract mapping below
+applies to both. Notes:
+
+- Remaining time is derived as `job.delivery.time - game.time` (game minutes);
+  navigation ETA comes from `truck.navigation.time` (seconds).
+- "Connected" means TruckTel answered with a `game.id`; the plugin runs inside
+  the game, so there is no separate "game connected" flag.
+
 ## Funbit source quirks the bridge corrects
 
 The bridge reads a Funbit-compatible ETS2/ATS Telemetry Web Server

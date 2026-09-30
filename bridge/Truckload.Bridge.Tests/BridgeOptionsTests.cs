@@ -49,6 +49,42 @@ public class BridgeOptionsTests : IDisposable
     }
 
     [Fact]
+    public void Resolve_DefaultsToTruckTel()
+    {
+        var options = BridgeOptions.Resolve(Array.Empty<string>(), _tempDir);
+        Assert.Equal("trucktel", options.ResolvedSource);
+        Assert.Equal("http://localhost:8080/api/rest/flat", options.ResolvedTelemetryUrl);
+    }
+
+    [Fact]
+    public void Resolve_SourceFunbitUsesTheFunbitDefaultUrl()
+    {
+        var options = BridgeOptions.Resolve(new[] { "--source", "funbit" }, _tempDir);
+        Assert.Equal("funbit", options.ResolvedSource);
+        Assert.Equal("http://localhost:25555/api/ets2/telemetry", options.ResolvedTelemetryUrl);
+    }
+
+    [Fact]
+    public void Resolve_OldConfigWithFunbitUrlKeepsWorkingAsFunbit()
+    {
+        File.WriteAllText(Path.Combine(_tempDir, BridgeOptions.ConfigFileName),
+            """{"IngestUrl":"https://x/api/ingest","IngestKey":"k","TelemetryUrl":"http://localhost:25555/api/ets2/telemetry"}""");
+
+        var options = BridgeOptions.Resolve(Array.Empty<string>(), _tempDir);
+
+        Assert.Equal("funbit", options.ResolvedSource);
+        Assert.Equal("http://localhost:25555/api/ets2/telemetry", options.ResolvedTelemetryUrl);
+    }
+
+    [Fact]
+    public void Resolve_CustomTruckTelPort()
+    {
+        var options = BridgeOptions.Resolve(new[] { "--telemetry-url", "http://localhost:9090" }, _tempDir);
+        Assert.Equal("trucktel", options.ResolvedSource);
+        Assert.Equal("http://localhost:9090", options.ResolvedTelemetryUrl);
+    }
+
+    [Fact]
     public void Resolve_HelpFlag()
     {
         var options = BridgeOptions.Resolve(new[] { "--help" }, _tempDir);

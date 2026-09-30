@@ -19,8 +19,12 @@ The Bridge is a small Windows app that reads live telemetry from your game and
 sends it to Truckload. Requirements:
 
 - Windows 10/11.
-- The ETS2/ATS Telemetry SDK plugin and a compatible telemetry web server
-  running (most telemetry overlays for these games already include this).
+- The [TruckTel](https://github.com/jvanstraten/TruckTel) game plugin:
+  download `trucktel.zip` from its
+  [releases](https://github.com/jvanstraten/TruckTel/releases), unpack it into
+  your game's `plugins` folder (`<game>/bin/win_x64/plugins`), and start the
+  game. Nothing else needs to run. (Already use Funbit's telemetry server?
+  Add `--source funbit` to the Bridge command.)
 
 Download `Truckload.Bridge.exe` from the
 [latest release](https://github.com/demortes/truckload-twitch-extension/releases/latest),
