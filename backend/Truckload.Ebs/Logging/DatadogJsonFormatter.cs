@@ -63,8 +63,9 @@ public sealed class DatadogJsonFormatter() : ConsoleFormatter(FormatterName)
 
     private static void WriteProperty(Utf8JsonWriter w, HashSet<string> written, string key, object? value)
     {
-        // "{OriginalFormat}" is the message template, not a useful searchable attribute.
-        if (key == "{OriginalFormat}" || !written.Add(key))
+        // "{OriginalFormat}" is the message template and "newLine" is EF's line-separator
+        // state; neither is a useful searchable attribute.
+        if (key is "{OriginalFormat}" or "newLine" || !written.Add(key))
             return;
 
         switch (value)

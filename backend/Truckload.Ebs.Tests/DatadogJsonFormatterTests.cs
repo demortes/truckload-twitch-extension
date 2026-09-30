@@ -62,7 +62,7 @@ public class DatadogJsonFormatterTests
         var scopes = new Scopes();
         scopes.Items.Add(new Dictionary<string, object?> { ["dd.trace_id"] = "123", ["dd.span_id"] = "456" });
 
-        var json = Format(LogLevel.Error, "failed for c1", [new("ChannelId", "c1"), new("{OriginalFormat}", "failed for {ChannelId}")], CaptureThrown(), scopes);
+        var json = Format(LogLevel.Error, "failed for c1", [new("ChannelId", "c1"), new("{OriginalFormat}", "failed for {ChannelId}"), new("newLine", "\n")], CaptureThrown(), scopes);
 
         Assert.Equal("c1", json.GetProperty("ChannelId").GetString());
         Assert.Equal("123", json.GetProperty("dd.trace_id").GetString());
@@ -71,5 +71,6 @@ public class DatadogJsonFormatterTests
         Assert.Equal("System.InvalidOperationException", error.GetProperty("kind").GetString());
         Assert.Equal("boom", error.GetProperty("message").GetString());
         Assert.False(json.TryGetProperty("{OriginalFormat}", out _));
+        Assert.False(json.TryGetProperty("newLine", out _));
     }
 }
