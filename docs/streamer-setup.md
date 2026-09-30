@@ -13,29 +13,40 @@ Open the extension's **Config** page from your Creator Dashboard. Click
 secret, since anyone with it can send data that appears on your channel's
 overlay.
 
-## 3. Download and run the Bridge
+## 3. Run the installer (Windows)
 
-The Bridge is a small Windows app that reads live telemetry from your game and
-sends it to Truckload. Requirements:
+Download `TruckloadSetup-v<version>.exe` from the
+[latest release](https://github.com/demortes/truckload-twitch-extension/releases/latest)
+and run it. It:
 
-- Windows 10/11.
-- The [TruckTel](https://github.com/jvanstraten/TruckTel) game plugin:
-  download `trucktel.zip` from its
-  [releases](https://github.com/jvanstraten/TruckTel/releases), unpack it into
-  your game's `plugins` folder (`<game>/bin/win_x64/plugins`), and start the
-  game. Nothing else needs to run. (Already use Funbit's telemetry server?
-  Add `--source funbit` to the Bridge command.)
+1. finds your American Truck Simulator / Euro Truck Simulator 2 folders on
+   Steam (you can correct or clear either one),
+2. installs the [TruckTel](https://github.com/jvanstraten/TruckTel) telemetry
+   plugin into each game,
+3. asks for your ingest key from step 2 and saves it, and
+4. installs the Truckload Bridge with a Start menu / desktop shortcut.
 
-Download `Truckload.Bridge.exe` from the
-[latest release](https://github.com/demortes/truckload-twitch-extension/releases/latest),
-then run the command shown on the Config page:
+Windows may show a "Windows protected your PC" (SmartScreen) prompt because the
+installer isn't code-signed yet; choose **More info, then Run anyway**. If Setup
+says it can't write to a game folder, run it again as administrator
+(right-click, *Run as administrator*).
+
+To start streaming: launch the game, then open **Truckload Bridge** from the
+shortcut. It keeps a console window open while it sends data; close it to stop.
+
+### Manual install (Linux, macOS, or if you prefer)
+
+- Unzip `trucktel.zip` from TruckTel's
+  [releases](https://github.com/jvanstraten/TruckTel/releases) into
+  `<game>/bin/win_x64/plugins` (`bin/linux_x64/plugins` on Linux).
+- Download the Bridge zip for your OS from the latest release, then run:
 
 ```
 Truckload.Bridge.exe --ingest-url https://<backend-domain>/api/ingest --key <your-key> --save
 ```
 
-`--save` remembers this so future runs need no arguments — just double-click
-the exe.
+`--save` remembers this so future runs need no arguments. Already use Funbit's
+telemetry server? Add `--source funbit`.
 
 ## 4. Verify
 
