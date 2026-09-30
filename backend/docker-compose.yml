@@ -12,6 +12,9 @@ services:
       - Twitch__ClientId=${TWITCH_EXTENSION_CLIENT_ID}
       - Twitch__ExtensionSecret=${TWITCH_EXTENSION_SECRET}
       - ASPNETCORE_ENVIRONMENT=Production
+      - DD_ENV=${DD_ENV:-local}
+    labels:
+      com.datadoghq.tags.env: ${DD_ENV:-local}
     depends_on:
       db:
         condition: service_healthy

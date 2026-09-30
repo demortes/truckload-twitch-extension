@@ -18,6 +18,11 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    labels:
+      com.datadoghq.tags.service: truckload-caddy
+      com.datadoghq.tags.env: ${DD_ENV:-production}
+      com.datadoghq.tags.version: "2"
+      com.datadoghq.ad.logs: '[{"source":"caddy","service":"truckload-caddy"}]'
     depends_on:
       - backend
     restart: unless-stopped
@@ -32,6 +37,9 @@ services:
       - Twitch__ExtensionSecret=${TWITCH_EXTENSION_SECRET}
       - ASPNETCORE_ENVIRONMENT=Production
       - Database__AutoMigrate=true
+      - DD_ENV=${DD_ENV:-production}
+    labels:
+      com.datadoghq.tags.env: ${DD_ENV:-production}
     depends_on:
       db:
         condition: service_healthy
@@ -45,6 +53,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    labels:
+      com.datadoghq.tags.service: truckload-db
+      com.datadoghq.tags.env: ${DD_ENV:-production}
+      com.datadoghq.tags.version: "16"
+      com.datadoghq.ad.logs: '[{"source":"postgresql","service":"truckload-db"}]'
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-truckload} -d truckload"]
       interval: 5s
