@@ -51,7 +51,7 @@ public sealed class TruckTelSource : ITelemetrySource
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or JsonException)
         {
             return TelemetryFetchResult.Unavailable(
-                $"Could not read telemetry from TruckTel at {_baseUrl}. Is ETS2/ATS running with the TruckTel plugin installed (and is the port correct)?");
+                $"Could not read telemetry from TruckTel at {_baseUrl} ({ex.GetType().Name}: {ex.Message}). Is ETS2/ATS running with the TruckTel plugin installed (and is the port correct)?");
         }
     }
 }
