@@ -18,6 +18,13 @@ public class DatadogJsonFormatterTests
         public IDisposable Push(object? state) => throw new NotSupportedException();
     }
 
+    // Throws and catches so the exception carries a real stack trace, as it would in production.
+    private static Exception Thrown(Exception ex)
+    {
+        try { throw ex; }
+        catch (Exception caught) { return caught; }
+    }
+
     private static JsonElement Format(LogLevel level, string message, KeyValuePair<string, object?>[] state, Exception? ex = null, Scopes? scopes = null)
     {
         var entry = new LogEntry<IReadOnlyList<KeyValuePair<string, object?>>>(
@@ -49,7 +56,7 @@ public class DatadogJsonFormatterTests
         var scopes = new Scopes();
         scopes.Items.Add(new Dictionary<string, object?> { ["dd.trace_id"] = "123", ["dd.span_id"] = "456" });
 
-        var json = Format(LogLevel.Error, "failed for c1", [new("ChannelId", "c1"), new("{OriginalFormat}", "failed for {ChannelId}")], new InvalidOperationException("boom"), scopes);
+        var json = Format(LogLevel.Error, "failed for c1", [new("ChannelId", "c1"), new("{OriginalFormat}", "failed for {ChannelId}")], Thrown(new InvalidOperationException("boom")), scopes);
 
         Assert.Equal("c1", json.GetProperty("ChannelId").GetString());
         Assert.Equal("123", json.GetProperty("dd.trace_id").GetString());
