@@ -75,7 +75,9 @@ RUN case "${TARGETARCH:-amd64}" in \
     && chmod 777 /var/log/datadog
 
 EXPOSE 25846
-ENV ASPNETCORE_URLS=http://+:25846
+# The base image sets ASPNETCORE_HTTP_PORTS=8080; override it (rather than ASPNETCORE_URLS) so
+# Kestrel does not log a "Overriding HTTP_PORTS" warning on every start.
+ENV ASPNETCORE_HTTP_PORTS=25846
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
     CMD curl -f http://localhost:25846/api/health/live || exit 1
 ENTRYPOINT ["dotnet", "Truckload.Ebs.dll"]
