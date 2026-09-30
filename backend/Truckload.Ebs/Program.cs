@@ -47,6 +47,7 @@ builder.Services.AddOptions<TwitchSettings>()
 builder.Services.AddSingleton<IValidateOptions<TwitchSettings>, TwitchSettingsValidator>();
 
 builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection("Database"));
+builder.Services.Configure<SiteSettings>(builder.Configuration.GetSection("Site"));
 
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -81,6 +82,7 @@ var app = builder.Build();
 app.UseCors();
 
 // Map endpoints
+app.MapHomeEndpoints();
 app.MapHealthEndpoints();
 app.MapIngestEndpoints();
 app.MapTelemetryEndpoints();
