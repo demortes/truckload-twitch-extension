@@ -10,10 +10,17 @@ of them.
 ## Requirements
 
 - Windows 10/11, Linux (native or via Proton), or macOS.
-- The ETS2/ATS Telemetry SDK plugin and a telemetry web server running locally
-  (default `http://localhost:25555/api/ets2/telemetry`). Most telemetry
-  overlays for these games use this same server under the hood, regardless of
-  OS.
+- The [TruckTel](https://github.com/jvanstraten/TruckTel) game plugin (the
+  default telemetry source). Download `trucktel.zip` from its
+  [releases](https://github.com/jvanstraten/TruckTel/releases) and unpack it
+  into the game's `plugins` folder
+  (`<game>/bin/win_x64/plugins` on Windows, `bin/linux_x64/plugins` on Linux),
+  then start the game. TruckTel runs its web server inside the game, so there
+  is no separate program to run. It listens on port 8080 by default; if that
+  port is taken, change it in TruckTel's `config.yaml` and pass
+  `--telemetry-url http://localhost:<port>` to the bridge.
+- Prefer Funbit's ETS2/ATS Telemetry Web Server instead? Use
+  `--source funbit` (default `http://localhost:25555/api/ets2/telemetry`).
 - An ingest URL and API key from the extension's **Config** page on your
   Twitch channel dashboard.
 
@@ -79,7 +86,8 @@ for the full list. The important ones:
 |---|---|
 | `--ingest-url` | Backend ingest endpoint |
 | `--key` | Ingest API key from the Config page |
-| `--telemetry-url` | Local telemetry server (default `http://localhost:25555/api/ets2/telemetry`) |
+| `--source trucktel\|funbit` | Telemetry source (default `trucktel`) |
+| `--telemetry-url` | Local telemetry server (default `http://localhost:8080` for TruckTel, `http://localhost:25555/api/ets2/telemetry` for Funbit) |
 | `--poll-ms` | Poll interval; minimum and default 1000ms |
 | `--heartbeat-s` | Send a keep-alive even if nothing changed (default 30s) |
 | `--units auto\|imperial\|metric` | Distance units; `auto` picks imperial for ATS, metric for ETS2 |
@@ -110,9 +118,11 @@ Truckload.Bridge.exe --demo --ingest-url https://your-backend-domain/api/ingest 
 - **"The backend rejected the ingest key"** — the key was regenerated or is
   wrong; the bridge exits (code 2). Get the current key from the Config page
   and re-run (or edit `truckload-bridge.json`).
-- **"Could not reach the telemetry server"** — start ATS/ETS2 with the
-  telemetry SDK plugin and your telemetry web server running, or pass
-  `--telemetry-url` if it's on a non-default port.
+- **"Could not read telemetry from TruckTel"** — start ATS/ETS2 with the
+  TruckTel plugin installed (check `trucktel/log.txt` in the plugins folder),
+  or pass `--telemetry-url http://localhost:<port>` if you changed its port.
+  Open `http://localhost:8080/api/rest/flat/game` in a browser while the game
+  runs; it should return JSON that includes `game.id`.
 - The bridge never sends more than once a second, and keeps a connection
   alive with a heartbeat every 30 seconds even while your telemetry doesn't
   change, so viewers can tell you're still streaming.

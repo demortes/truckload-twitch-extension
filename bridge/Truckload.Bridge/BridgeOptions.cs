@@ -6,7 +6,32 @@ public sealed class BridgeOptions
 {
     public string? IngestUrl { get; set; }
     public string? IngestKey { get; set; }
-    public string TelemetryUrl { get; set; } = "http://localhost:25555/api/ets2/telemetry";
+    /// <summary>"trucktel" (default) or "funbit". When unset, inferred from <see cref="TelemetryUrl"/> for older configs.</summary>
+    public string? Source { get; set; }
+
+    /// <summary>Local telemetry server URL. When unset, the default for the resolved <see cref="Source"/> is used.</summary>
+    public string? TelemetryUrl { get; set; }
+
+    public const string SourceTrucktel = "trucktel";
+    public const string SourceFunbit = "funbit";
+    public const string FunbitDefaultUrl = "http://localhost:25555/api/ets2/telemetry";
+    public const string TruckTelDefaultUrl = "http://localhost:8080/api/rest/flat";
+
+    /// <summary>
+    /// The telemetry source to use. Configs saved before TruckTel support have a Funbit-style
+    /// TelemetryUrl and no Source; those keep working as Funbit.
+    /// </summary>
+    public string ResolvedSource =>
+        !string.IsNullOrWhiteSpace(Source)
+            ? Source!.Trim().ToLowerInvariant()
+            : TelemetryUrl is not null && TelemetryUrl.Contains("/api/ets2/", StringComparison.OrdinalIgnoreCase)
+                ? SourceFunbit
+                : SourceTrucktel;
+
+    public string ResolvedTelemetryUrl =>
+        !string.IsNullOrWhiteSpace(TelemetryUrl)
+            ? TelemetryUrl!
+            : ResolvedSource == SourceFunbit ? FunbitDefaultUrl : TruckTelDefaultUrl;
     public int PollMs { get; set; } = 1000;
     public int HeartbeatSeconds { get; set; } = 30;
 
@@ -74,6 +99,9 @@ public sealed class BridgeOptions
                 case "--telemetry-url":
                     options.TelemetryUrl = RequireValue(args, ref i);
                     break;
+                case "--source":
+                    options.Source = RequireValue(args, ref i);
+                    break;
                 case "--poll-ms":
                     options.PollMs = int.Parse(RequireValue(args, ref i));
                     break;
@@ -135,7 +163,10 @@ public sealed class BridgeOptions
         Options:
           --ingest-url <url>     Backend ingest endpoint, e.g. https://your-domain/api/ingest
           --key <key>            Ingest API key from the extension's Config page
-          --telemetry-url <url>  Local telemetry server URL (default: http://localhost:25555/api/ets2/telemetry)
+          --source trucktel|funbit
+                                 Where telemetry comes from (default: trucktel, the TruckTel game plugin)
+          --telemetry-url <url>  Local telemetry server URL (default: http://localhost:8080/api/rest/flat for
+                                 trucktel, http://localhost:25555/api/ets2/telemetry for funbit)
           --poll-ms <ms>         Poll interval, minimum and default 1000
           --heartbeat-s <s>      Send a keep-alive even when nothing changed (default 30)
           --units auto|imperial|metric   Distance units (default: auto, derived from the game)
