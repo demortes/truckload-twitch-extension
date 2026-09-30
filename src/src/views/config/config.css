@@ -1,17 +1,18 @@
-/* The Twitch config view isn't an overlay: it needs normal document flow,
-   scrolling, and click/select interaction, unlike the overlay views which
-   set #root to fixed/non-interactive in index.css. */
+/* The Twitch config view isn't an overlay: it needs scrolling and click/select
+   interaction, unlike the overlay views. index.css sets body to overflow:hidden
+   and #root to a fixed, non-interactive full-viewport box (right for overlays),
+   so the config view fills that box and scrolls inside it itself. */
 .config-view {
-  position: static;
-  width: auto;
-  height: auto;
-  min-height: 100vh;
-  overflow: auto;
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
   pointer-events: auto;
   display: flex;
   justify-content: center;
+  align-items: flex-start;
   padding: var(--spacing-lg);
   background: #0f0f11;
+  color-scheme: dark; /* dark scrollbar to match the page */
 }
 
 .config-card {
