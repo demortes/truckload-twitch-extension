@@ -13,6 +13,13 @@ services:
       - Twitch__ExtensionSecret=${TWITCH_EXTENSION_SECRET}
       - ASPNETCORE_ENVIRONMENT=Production
       - DD_ENV=${DD_ENV:-local}
+      - DD_AGENT_HOST=host.docker.internal
+      - DD_TRACE_ENABLED=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://host.docker.internal:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=delta
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     labels:
       com.datadoghq.tags.env: ${DD_ENV:-local}
     depends_on:

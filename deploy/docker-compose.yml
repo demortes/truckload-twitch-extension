@@ -38,6 +38,13 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - Database__AutoMigrate=true
       - DD_ENV=${DD_ENV:-production}
+      - DD_AGENT_HOST=host.docker.internal
+      - DD_TRACE_ENABLED=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://host.docker.internal:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=delta
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     labels:
       com.datadoghq.tags.env: ${DD_ENV:-production}
     depends_on:

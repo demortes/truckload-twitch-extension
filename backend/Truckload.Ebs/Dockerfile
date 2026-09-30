@@ -13,6 +13,7 @@ COPY backend/Truckload.Ebs/ backend/Truckload.Ebs/
 RUN dotnet publish backend/Truckload.Ebs/Truckload.Ebs.csproj -c Release -o /app -p:Version=${VERSION}
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+ARG TARGETARCH
 
 # Build metadata, supplied by CI (docker/metadata-action + build-args); defaults keep local builds working.
 ARG VERSION=1.0.0
@@ -29,7 +30,12 @@ LABEL org.opencontainers.image.title="truckload-ebs"       org.opencontainers.im
 LABEL com.datadoghq.tags.service="truckload-ebs"       com.datadoghq.tags.version="${VERSION}"       com.datadoghq.ad.logs='[{"source":"csharp","service":"truckload-ebs"}]'
 
 # Same tags as env vars for the process (and any Datadog tracer/SDK added later).
-ENV DD_SERVICE=truckload-ebs     DD_VERSION=${VERSION}     DD_GIT_COMMIT_SHA=${GIT_SHA}     DD_GIT_REPOSITORY_URL=${SOURCE_URL}
+ENV DD_SERVICE=truckload-ebs     DD_VERSION=${VERSION}     DD_GIT_COMMIT_SHA=${GIT_SHA}     DD_GIT_REPOSITORY_URL=${SOURCE_URL}     DD_LOGS_INJECTION=true     DD_RUNTIME_METRICS_ENABLED=true     DD_PROFILING_ENABLED=false
+
+# Datadog .NET tracer auto-instrumentation. The native profiler ships in the app's publish
+# output (Datadog.Trace.Bundle package) under /app/datadog. DD_AGENT_HOST / DD_TRACE_AGENT_URL
+# are supplied at runtime (see compose files).
+ENV CORECLR_ENABLE_PROFILING=1     CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}     DD_DOTNET_TRACER_HOME=/app/datadog
 
 WORKDIR /app
 
@@ -39,6 +45,10 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app .
+
+# Pick the native profiler matching the image architecture (buildx sets TARGETARCH).
+RUN case "${TARGETARCH:-amd64}" in         arm64) ARCH=linux-arm64 ;;         *)     ARCH=linux-x64 ;;     esac     && ln -s /app/datadog/$ARCH/Datadog.Trace.ClrProfiler.Native.so /app/datadog/Datadog.Trace.ClrProfiler.Native.so     && mkdir -p /var/log/datadog && chmod 777 /var/log/datadog
+ENV CORECLR_PROFILER_PATH=/app/datadog/Datadog.Trace.ClrProfiler.Native.so
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \

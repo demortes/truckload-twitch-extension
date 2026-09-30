@@ -17,12 +17,16 @@ jobs:
   backend-image:
     name: Build and push backend image
     runs-on: ubuntu-latest
+    env:
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Derive version
         id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          echo "started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Docker metadata (OCI labels)
@@ -51,6 +55,19 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/truckload-ebs:${{ steps.version.outputs.version }}
             ghcr.io/${{ github.repository_owner }}/truckload-ebs:latest
+      - name: Record release in Datadog (DORA deployment)
+        if: ${{ env.DD_API_KEY != '' }}
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_SITE: ${{ vars.DD_SITE || 'datadoghq.com' }}
+        run: >
+          npx --yes @datadog/datadog-ci dora deployment
+          --service truckload-ebs
+          --env production
+          --version ${{ steps.version.outputs.version }}
+          --started-at ${{ steps.version.outputs.started_at }}
+          --git-repository-url ${{ github.server_url }}/${{ github.repository }}
+          --git-commit-sha ${{ github.sha }}
 
   bridge:
     name: Publish bridge exe (${{ matrix.rid }})

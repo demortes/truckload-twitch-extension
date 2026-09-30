@@ -38,6 +38,8 @@ jobs:
   dotnet:
     name: .NET (build + test)
     runs-on: ubuntu-latest
+    env:
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,7 +52,21 @@ jobs:
       - name: Build
         run: dotnet build Truckload.slnx -c Release --no-restore
       - name: Test
-        run: dotnet test Truckload.slnx -c Release --no-build
+        run: >
+          dotnet test Truckload.slnx -c Release --no-build
+          --logger "junit;LogFilePath=${{ github.workspace }}/test-results/{assembly}.xml"
+      - name: Upload test results to Datadog
+        # Only when the DD_API_KEY secret exists (not available to fork PRs).
+        if: ${{ always() && env.DD_API_KEY != '' }}
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_SITE: ${{ vars.DD_SITE || 'datadoghq.com' }}
+        run: >
+          npx --yes @datadog/datadog-ci junit upload
+          --service truckload-twitch-extension
+          --env ci
+          --tags team:truckload
+          test-results
       - name: Smoke-test bridge publish (win-x64 single file)
         run: |
           dotnet publish bridge/Truckload.Bridge -c Release -r win-x64 --self-contained \

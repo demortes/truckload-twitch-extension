@@ -4,6 +4,8 @@ using Microsoft.Extensions.Options;
 using Truckload.Ebs.Configuration;
 using Truckload.Ebs.Data;
 using Truckload.Ebs.Endpoints;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using Truckload.Ebs.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +20,24 @@ builder.Logging.AddJsonConsole(o =>
     o.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ";
     o.JsonWriterOptions = new System.Text.Json.JsonWriterOptions { Indented = false };
 });
+
+// OpenTelemetry metrics -> OTLP (Datadog Agent's OTLP receiver). Endpoint/protocol/temporality come
+// from the standard OTEL_* env vars (see compose files). Traces are handled by the Datadog tracer,
+// so only metrics are enabled here to avoid duplicate spans.
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r
+        .AddService(
+            serviceName: builder.Configuration["DD_SERVICE"] ?? "truckload-ebs",
+            serviceVersion: builder.Configuration["DD_VERSION"])
+        .AddAttributes([new("deployment.environment.name", builder.Configuration["DD_ENV"] ?? "unknown")]))
+    .WithMetrics(m => m
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddMeter(AppMetrics.MeterName)
+        .AddMeter("Npgsql")
+        .AddMeter("Microsoft.EntityFrameworkCore")
+        .AddOtlpExporter());
 
 // Configuration
 builder.Services.AddOptions<TwitchSettings>()
