@@ -3,8 +3,8 @@
 # https://github.com/demortes/truckload-twitch-extension
 
 # Port TruckTel's web server listens on for this app. The Truckload Bridge reads
-# telemetry from here (it also tries TruckTel's default 8080 as a fallback). If you
-# change this, run the Bridge with --telemetry-url http://localhost:<port>
+# telemetry from here. If you change this, run the Bridge with
+# --telemetry-url http://localhost:<port>
 port: 25852
 
 # Metadata for the landing page.

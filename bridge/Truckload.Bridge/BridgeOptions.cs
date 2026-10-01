@@ -18,9 +18,6 @@ public sealed class BridgeOptions
     /// <summary>Port of the "truckload" TruckTel app installed by the Windows installer (trucktel-app/config.yaml).</summary>
     public const string TruckTelDefaultUrl = "http://localhost:25852/api/rest/flat";
 
-    /// <summary>TruckTel's own default port, used when it was installed by hand without our app directory.</summary>
-    public const string TruckTelFallbackUrl = "http://localhost:8080/api/rest/flat";
-
     /// <summary>
     /// The telemetry source to use. Configs saved before TruckTel support have a Funbit-style
     /// TelemetryUrl and no Source; those keep working as Funbit.
@@ -37,14 +34,6 @@ public sealed class BridgeOptions
             ? TelemetryUrl!
             : ResolvedSource == SourceFunbit ? FunbitDefaultUrl : TruckTelDefaultUrl;
 
-    /// <summary>
-    /// Every URL to try, in order. An explicit TelemetryUrl is used alone; otherwise TruckTel falls
-    /// back from the Truckload app's port to TruckTel's default 8080.
-    /// </summary>
-    public IReadOnlyList<string> ResolvedTelemetryUrls =>
-        !string.IsNullOrWhiteSpace(TelemetryUrl) || ResolvedSource == SourceFunbit
-            ? [ResolvedTelemetryUrl]
-            : [TruckTelDefaultUrl, TruckTelFallbackUrl];
     public int PollMs { get; set; } = 1000;
     public int HeartbeatSeconds { get; set; } = 30;
 
@@ -178,7 +167,7 @@ public sealed class BridgeOptions
           --key <key>            Ingest API key from the extension's Config page
           --source trucktel|funbit
                                  Where telemetry comes from (default: trucktel, the TruckTel game plugin)
-          --telemetry-url <url>  Local telemetry server URL (default: http://localhost:8080/api/rest/flat for
+          --telemetry-url <url>  Local telemetry server URL (default: http://localhost:25852/api/rest/flat for
                                  trucktel, http://localhost:25555/api/ets2/telemetry for funbit)
           --poll-ms <ms>         Poll interval, minimum and default 1000
           --heartbeat-s <s>      Send a keep-alive even when nothing changed (default 30)

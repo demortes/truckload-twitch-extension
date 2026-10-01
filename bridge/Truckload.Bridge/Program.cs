@@ -36,7 +36,7 @@ if (options.Save)
 }
 
 Console.WriteLine("Truckload Bridge v1.0.0");
-Console.WriteLine($"  Telemetry source : {(options.Demo ? $"demo ({options.DemoGame})" : $"{options.ResolvedSource} at {string.Join(" or ", options.ResolvedTelemetryUrls)}")}");
+Console.WriteLine($"  Telemetry source : {(options.Demo ? $"demo ({options.DemoGame})" : $"{options.ResolvedSource} at {options.ResolvedTelemetryUrl}")}");
 Console.WriteLine($"  Ingest URL       : {(options.DryRun ? "(dry run, not sending)" : options.IngestUrl)}");
 Console.WriteLine($"  Ingest key       : {(options.DryRun ? "(none)" : Mask(options.IngestKey))}");
 Console.WriteLine($"  Poll interval    : {options.PollMs} ms   Heartbeat: {options.HeartbeatSeconds}s   Units: {options.Units}");
@@ -57,7 +57,7 @@ ITelemetrySource source = options.Demo
     : options.ResolvedSource switch
     {
         BridgeOptions.SourceFunbit => new FunbitSource(httpClient, options.ResolvedTelemetryUrl),
-        BridgeOptions.SourceTrucktel => new TruckTelSource(httpClient, options.ResolvedTelemetryUrls),
+        BridgeOptions.SourceTrucktel => new TruckTelSource(httpClient, options.ResolvedTelemetryUrl),
         var other => throw new ArgumentException($"Unknown --source '{other}'. Use 'trucktel' or 'funbit'."),
     };
 

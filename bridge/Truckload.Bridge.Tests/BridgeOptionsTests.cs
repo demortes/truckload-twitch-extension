@@ -54,7 +54,6 @@ public class BridgeOptionsTests : IDisposable
         var options = BridgeOptions.Resolve(Array.Empty<string>(), _tempDir);
         Assert.Equal("trucktel", options.ResolvedSource);
         Assert.Equal("http://localhost:25852/api/rest/flat", options.ResolvedTelemetryUrl);
-        Assert.Equal(new[] { "http://localhost:25852/api/rest/flat", "http://localhost:8080/api/rest/flat" }, options.ResolvedTelemetryUrls);
     }
 
     [Fact]
@@ -83,7 +82,6 @@ public class BridgeOptionsTests : IDisposable
         var options = BridgeOptions.Resolve(new[] { "--telemetry-url", "http://localhost:9090" }, _tempDir);
         Assert.Equal("trucktel", options.ResolvedSource);
         Assert.Equal("http://localhost:9090", options.ResolvedTelemetryUrl);
-        Assert.Equal(new[] { "http://localhost:9090" }, options.ResolvedTelemetryUrls); // explicit URL: no fallback
     }
 
     [Fact]

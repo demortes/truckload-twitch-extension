@@ -106,8 +106,7 @@ existing steady-state stats.
 
 By default the bridge reads the [TruckTel](https://github.com/jvanstraten/TruckTel)
 plugin's REST API (`/api/rest/flat/<prefix>` for `game`, `frame`, `truck`, `job`
-and `trailer`, port 25852 for the installer's `truckload` TruckTel app, falling back to
-TruckTel's default 8080). Its flat JSON uses the SCS telemetry SDK's
+and `trailer`, port 25852, the port of the installer's `truckload` TruckTel app). Its flat JSON uses the SCS telemetry SDK's
 own key names (`truck.fuel.amount`, `job.destination.city`, `truck.wear.engine`,
 ...). `bridge/Truckload.Bridge/TruckTel/TruckTelMapper.cs` converts that into the
 same intermediate model the Funbit source uses, so the contract mapping below
