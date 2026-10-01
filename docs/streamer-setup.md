@@ -19,10 +19,12 @@ Download `TruckloadSetup-v<version>.exe` from the
 [latest release](https://github.com/demortes/truckload-twitch-extension/releases/latest)
 and run it. It:
 
-1. finds your American Truck Simulator / Euro Truck Simulator 2 folders on
-   Steam (you can correct or clear either one),
+1. asks which games you play (American Truck Simulator, Euro Truck Simulator 2,
+   or both; games it finds on Steam are ticked for you) and confirms each
+   game's folder,
 2. installs the [TruckTel](https://github.com/jvanstraten/TruckTel) telemetry
-   plugin into each game,
+   plugin into each game you ticked (run the installer again later to add the
+   other game),
 3. asks for your ingest key from step 2 and saves it, and
 4. installs the Truckload Bridge with a Start menu / desktop shortcut.
 

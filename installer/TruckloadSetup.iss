@@ -34,16 +34,28 @@ WizardStyle=modern
 UninstallDisplayIcon={app}\Truckload.Bridge.exe
 CloseApplications=yes
 
+[Types]
+Name: "custom"; Description: "Choose which games to set up"; Flags: iscustom
+
+[Components]
+Name: "ats"; Description: "American Truck Simulator (install the telemetry plugin)"; Types: custom
+Name: "ets2"; Description: "Euro Truck Simulator 2 (install the telemetry plugin)"; Types: custom
+
+[Messages]
+WizardSelectComponents=Your games
+SelectComponentsDesc=Which games do you play?
+SelectComponentsLabel2=Tick each game you want Truckload to work with. Games found on Steam are ticked for you. You can pick just one, and you can run this installer again later to add the other.
+
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Shortcuts:"
 
 [Files]
 Source: "staging\Truckload.Bridge.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; TruckTel game plugin (MIT) is copied into each selected game's plugins folder.
-Source: "staging\trucktel.dll"; DestDir: "{code:AtsPluginDir}"; Flags: ignoreversion; Check: InstallAts
-Source: "staging\trucktel\LICENSE"; DestDir: "{code:AtsPluginDir}\trucktel"; Flags: ignoreversion; Check: InstallAts
-Source: "staging\trucktel.dll"; DestDir: "{code:Ets2PluginDir}"; Flags: ignoreversion; Check: InstallEts2
-Source: "staging\trucktel\LICENSE"; DestDir: "{code:Ets2PluginDir}\trucktel"; Flags: ignoreversion; Check: InstallEts2
+Source: "staging\trucktel.dll"; DestDir: "{code:AtsPluginDir}"; Flags: ignoreversion; Components: ats
+Source: "staging\trucktel\LICENSE"; DestDir: "{code:AtsPluginDir}\trucktel"; Flags: ignoreversion; Components: ats
+Source: "staging\trucktel.dll"; DestDir: "{code:Ets2PluginDir}"; Flags: ignoreversion; Components: ets2
+Source: "staging\trucktel\LICENSE"; DestDir: "{code:Ets2PluginDir}\trucktel"; Flags: ignoreversion; Components: ets2
 
 [Icons]
 Name: "{group}\Truckload Bridge"; Filename: "{app}\Truckload.Bridge.exe"; WorkingDir: "{app}"
@@ -125,12 +137,12 @@ end;
 
 function InstallAts: Boolean;
 begin
-  Result := Trim(GamesPage.Values[0]) <> '';
+  Result := WizardIsComponentSelected('ats') and (Trim(GamesPage.Values[0]) <> '');
 end;
 
 function InstallEts2: Boolean;
 begin
-  Result := Trim(GamesPage.Values[1]) <> '';
+  Result := WizardIsComponentSelected('ets2') and (Trim(GamesPage.Values[1]) <> '');
 end;
 
 function JsonEscape(const S: String): String;
@@ -144,16 +156,24 @@ end;
 
 procedure InitializeWizard;
 begin
-  GamesPage := CreateInputDirPage(wpSelectDir,
+  GamesPage := CreateInputDirPage(wpSelectComponents,
     'Game folders',
     'Where are your games installed?',
-    'Truckload installs its telemetry plugin (TruckTel) into each game you choose. ' +
-    'Folders were found automatically where possible. Clear a box to skip that game.',
+    'Truckload installs its telemetry plugin (TruckTel) into the game folders below. ' +
+    'Folders were found automatically where possible. Only the games you ticked on the previous page are used.',
     False, '');
   GamesPage.Add('American Truck Simulator folder:');
   GamesPage.Add('Euro Truck Simulator 2 folder:');
   GamesPage.Values[0] := FindGameRoot('American Truck Simulator');
   GamesPage.Values[1] := FindGameRoot('Euro Truck Simulator 2');
+
+  // Tick a game only if it was found on this PC; the other stays optional.
+  // (For silent installs, an explicit /COMPONENTS= on the command line decides.)
+  if not WizardSilent then
+  begin
+    if GamesPage.Values[0] <> '' then WizardSelectComponents('ats') else WizardSelectComponents('!ats');
+    if GamesPage.Values[1] <> '' then WizardSelectComponents('ets2') else WizardSelectComponents('!ets2');
+  end;
 
   KeyPage := CreateInputQueryPage(GamesPage.ID,
     'Connect to your channel',
@@ -186,29 +206,75 @@ begin
   begin
     MsgBox(Name + ': "' + R + '" does not look like a game folder (it has no bin\win_x64 inside). ' +
       'In Steam, right-click the game, choose Manage, then Browse local files, and use that folder. ' +
-      'Clear the box to skip this game.', mbError, MB_OK);
+      'Or go Back and untick this game.', mbError, MB_OK);
     Result := False;
     Exit;
   end;
   if not IsWritableDir(R + '\bin\win_x64') then
   begin
     MsgBox(Name + ': Setup cannot write to "' + R + '\bin\win_x64". Close the installer and run it again ' +
-      'as administrator (right-click, Run as administrator), or clear the box to skip this game.', mbError, MB_OK);
+      'as administrator (right-click, Run as administrator), or go Back and untick this game.', mbError, MB_OK);
     Result := False;
+  end;
+end;
+
+// The folder page is only relevant when at least one game was ticked.
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+  if PageID = GamesPage.ID then
+    Result := not (WizardIsComponentSelected('ats') or WizardIsComponentSelected('ets2'));
+end;
+
+// Only the ticked games' folder boxes are editable.
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if CurPageID = GamesPage.ID then
+  begin
+    GamesPage.Edits[0].Enabled := WizardIsComponentSelected('ats');
+    GamesPage.Buttons[0].Enabled := WizardIsComponentSelected('ats');
+    GamesPage.Edits[1].Enabled := WizardIsComponentSelected('ets2');
+    GamesPage.Buttons[1].Enabled := WizardIsComponentSelected('ets2');
   end;
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
+
+  if CurPageID = wpSelectComponents then
+  begin
+    if not (WizardIsComponentSelected('ats') or WizardIsComponentSelected('ets2')) then
+      Result := MsgBox('No game is ticked, so the telemetry plugin will not be installed and the ' +
+        'Bridge will not get any data until you install TruckTel yourself. Continue anyway?',
+        mbConfirmation, MB_YESNO) = IDYES;
+  end;
+
   if CurPageID = GamesPage.ID then
   begin
-    Result := ValidateGameRoot('American Truck Simulator', GamesPage.Values[0]) and
-              ValidateGameRoot('Euro Truck Simulator 2', GamesPage.Values[1]);
-    if Result and (Trim(GamesPage.Values[0]) = '') and (Trim(GamesPage.Values[1]) = '') then
-      Result := MsgBox('No game folder was selected, so the telemetry plugin will not be installed. ' +
-        'The Bridge will not get any data until TruckTel is installed. Continue anyway?',
-        mbConfirmation, MB_YESNO) = IDYES;
+    if WizardIsComponentSelected('ats') then
+    begin
+      if Trim(GamesPage.Values[0]) = '' then
+      begin
+        MsgBox('American Truck Simulator is ticked but no folder was given. Enter its folder, or go Back ' +
+          'and untick it.', mbError, MB_OK);
+        Result := False;
+        Exit;
+      end;
+      Result := ValidateGameRoot('American Truck Simulator', GamesPage.Values[0]);
+      if not Result then Exit;
+    end;
+    if WizardIsComponentSelected('ets2') then
+    begin
+      if Trim(GamesPage.Values[1]) = '' then
+      begin
+        MsgBox('Euro Truck Simulator 2 is ticked but no folder was given. Enter its folder, or go Back ' +
+          'and untick it.', mbError, MB_OK);
+        Result := False;
+        Exit;
+      end;
+      Result := ValidateGameRoot('Euro Truck Simulator 2', GamesPage.Values[1]);
+    end;
   end;
 end;
 
