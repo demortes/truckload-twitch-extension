@@ -15,6 +15,48 @@ function parsePlayerIdsInput(text) {
     .filter(Boolean);
 }
 
+/**
+ * Copies text to the clipboard. Twitch hosts extensions in a sandboxed iframe without the
+ * `clipboard-write` permission, so `navigator.clipboard.writeText` is rejected there; fall back
+ * to the legacy execCommand('copy') path, which works from a user click inside the iframe.
+ * Resolves to whether the copy succeeded.
+ */
+async function copyText(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // fall through to the legacy path
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.top = '0';
+  textarea.style.left = '0';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  try {
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, text.length);
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
+function copyLabel(copied, label) {
+  if (copied === label) return 'Copied!';
+  if (copied === `${label}-failed`) return 'Select and press Ctrl+C';
+  return 'Copy';
+}
+
 function useNow(refreshMs) {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -127,11 +169,10 @@ function Config() {
     setTimeout(() => setConvoySaved(false), 2000);
   };
 
-  const copyToClipboard = (text, label) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(label);
-      setTimeout(() => setCopied(null), 2000);
-    });
+  const copyToClipboard = async (text, label) => {
+    const ok = await copyText(text);
+    setCopied(ok ? label : `${label}-failed`);
+    setTimeout(() => setCopied(null), ok ? 2000 : 4000);
   };
 
   if (!window.Twitch?.ext) {
@@ -203,7 +244,7 @@ function Config() {
                   onClick={() => copyToClipboard(bridgeCommand, 'cmd')}
                   aria-live="polite"
                 >
-                  {copied === 'cmd' ? 'Copied!' : 'Copy'}
+                  {copyLabel(copied, 'cmd')}
                 </button>
               </div>
               <p className="config-hint">
@@ -227,7 +268,7 @@ function Config() {
                   onClick={() => copyToClipboard(keyData.ingestKey, 'key')}
                   aria-live="polite"
                 >
-                  {copied === 'key' ? 'Copied!' : 'Copy'}
+                  {copyLabel(copied, 'key')}
                 </button>
               </div>
               <p className="config-warning">Keep this key secret. Anyone with it can send data to your channel's overlay.</p>
