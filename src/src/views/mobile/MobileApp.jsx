@@ -4,6 +4,7 @@ import TruckStats from '../../components/TruckStats';
 import Convoy from '../../components/Convoy';
 import RecentDeliveries from '../../components/RecentDeliveries';
 import StatusBadge from '../../components/StatusBadge';
+import Dashboard from '../../components/Dashboard';
 import { useTelemetry } from '../../hooks/useTelemetry';
 import { useJobHistory } from '../../hooks/useJobHistory';
 import { FEATURES } from '../../config/features';
@@ -21,7 +22,7 @@ const TAB_LABELS = {
 };
 
 function MobileApp() {
-  const { job, truck, convoy, units, connected, stale } = useTelemetry();
+  const { job, truck, dashboard, convoy, units, connected, stale } = useTelemetry();
   const history = useJobHistory();
   const [activeTab, setActiveTab] = useState('job');
 
@@ -41,6 +42,7 @@ function MobileApp() {
         <StatusBadge connected={connected} stale={stale} />
       </nav>
       <div className="mobile-content">
+        <Dashboard dashboard={dashboard} truck={truck} units={units} live={connected && !stale} variant="full" />
         {activeTab === 'job' && <JobInfo job={job} units={units} />}
         {activeTab === 'truck' && <TruckStats truck={truck} units={units} />}
         {activeTab === 'history' && <RecentDeliveries history={history} units={units} />}

@@ -7,6 +7,14 @@
   pointer-events: none;
 }
 
+/* Dashboard HUD: bottom centre, clear of the job card (left) and truck stats (top right). */
+.overlay-center {
+  position: absolute;
+  bottom: var(--spacing-lg);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .overlay-left {
   position: absolute;
   bottom: var(--spacing-lg);

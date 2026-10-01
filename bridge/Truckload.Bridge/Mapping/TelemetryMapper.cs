@@ -37,8 +37,62 @@ public static class TelemetryMapper
             Game: game,
             Units: units,
             Job: MapJob(raw, units),
-            Truck: MapTruck(raw.Truck, units)
+            Truck: MapTruck(raw.Truck, units),
+            Dashboard: MapDashboard(raw.Truck, units, ToMinutes(raw.Game?.NextRestStopTime))
         );
+    }
+
+    private const double KmhPerMph = 1.60934;
+
+    /// <summary>The instrument-cluster state, or null when there is no truck data.</summary>
+    internal static DashboardInfo? MapDashboard(FunbitTruck? truck, string units, int? restMinutes = null)
+    {
+        if (truck is null)
+            return null;
+
+        var kmh = Math.Abs(truck.Speed);
+        var speed = (int)Math.Round(units == TelemetryUnits.Metric ? kmh : kmh / KmhPerMph);
+
+        var signal = SignalState(truck);
+        var lights = LightsState(truck);
+
+        var warnings = new List<string>(DashboardValues.Warnings.Length);
+        if (truck.FuelWarningOn) warnings.Add("fuel");
+        if (truck.OilPressureWarningOn) warnings.Add("oil");
+        if (truck.WaterTemperatureWarningOn) warnings.Add("coolant");
+        if (truck.BatteryVoltageWarningOn) warnings.Add("battery");
+        if (truck.AdblueWarningOn) warnings.Add("adblue");
+        if (truck.AirPressureWarningOn || truck.AirPressureEmergencyOn) warnings.Add("air");
+        if (truck.ParkBrakeOn) warnings.Add("parkingBrake");
+
+        // Zero is ambiguous (due now, or fatigue simulation off and no real value), so only a positive time is shown.
+        int? rest = restMinutes is > 0 ? restMinutes : null;
+
+        return new DashboardInfo(speed, signal, lights, truck.WipersOn, warnings, rest);
+    }
+
+    /// <summary>Hazards are both stalks at once (or the dedicated hazard switch); that is reported as one state.</summary>
+    private static string SignalState(FunbitTruck truck)
+    {
+        if (truck.HazardWarning || (truck.BlinkerLeftActive && truck.BlinkerRightActive))
+            return "hazard";
+        if (truck.BlinkerLeftActive)
+            return "left";
+        if (truck.BlinkerRightActive)
+            return "right";
+        return "off";
+    }
+
+    /// <summary>The highest headlight state that is on: high beam beats low beam beats parking lights.</summary>
+    private static string LightsState(FunbitTruck truck)
+    {
+        if (truck.LightsBeamHighOn)
+            return "high";
+        if (truck.LightsBeamLowOn)
+            return "low";
+        if (truck.LightsParkingOn)
+            return "parking";
+        return "off";
     }
 
     private static JobInfo? MapJob(FunbitTelemetry raw, string units)

@@ -53,6 +53,8 @@ public sealed class DemoSource : ITelemetrySource
         var fuelPercent = Math.Max(35, 100 - elapsed / 20);
         var damage = Math.Min(15, elapsed / 600);
 
+        game.NextRestStopTime = DateTime.MinValue.AddMinutes(Math.Max(1, 330 - elapsed / 3));
+
         var truck = new FunbitTruck
         {
             Make = "Peterbilt",
@@ -62,6 +64,18 @@ public sealed class DemoSource : ITelemetrySource
             FuelCapacity = 100,
             Odometer = 124532 + elapsed / 10.0,
             WearChassis = damage / 100.0,
+
+            // Instrument cluster: a believable, repeating pattern so every dashboard element gets exercised.
+            Speed = 95 + 20 * Math.Sin(elapsed / 7.0), // km/h
+            BlinkerLeftActive = elapsed % 40 is >= 10 and < 14,
+            BlinkerRightActive = elapsed % 40 is >= 24 and < 28,
+            HazardWarning = elapsed % 90 is >= 60 and < 65,
+            LightsBeamLowOn = elapsed % 120 < 80,
+            LightsBeamHighOn = elapsed % 120 is >= 80 and < 100,
+            LightsParkingOn = elapsed % 120 >= 100,
+            WipersOn = elapsed % 60 < 25,
+            FuelWarningOn = fuelPercent < 40,
+            ParkBrakeOn = phase >= JobDurationSeconds, // resting between jobs
         };
 
         if (phase >= JobDurationSeconds)

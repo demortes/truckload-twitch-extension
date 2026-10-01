@@ -13,7 +13,8 @@ public sealed record TelemetryPayload(
     string Units,
     JobInfo? Job,
     TruckInfo? Truck,
-    IReadOnlyList<TelemetryEvent>? Events = null
+    IReadOnlyList<TelemetryEvent>? Events = null,
+    DashboardInfo? Dashboard = null
 );
 
 public sealed record JobInfo(
@@ -33,6 +34,35 @@ public sealed record TruckInfo(
     int DamagePercent,
     int Odometer
 );
+
+/// <summary>
+/// Live instrument-cluster state, shown on the panel/overlay "dashboard". Unlike
+/// <see cref="TruckInfo"/> (slow-moving stats), this changes constantly (speed) or flickers
+/// (signals), so it is optional and omitted when the source can't provide it.
+/// </summary>
+public sealed record DashboardInfo(
+    /// <summary>Current speed (absolute value), in the payload's units: mph for imperial, km/h for metric.</summary>
+    int Speed,
+    /// <summary>Turn signals: one of <see cref="DashboardValues.Signals"/>.</summary>
+    string Signal,
+    /// <summary>Headlights: one of <see cref="DashboardValues.Lights"/>.</summary>
+    string Lights,
+    bool Wipers,
+    /// <summary>Active warning lamps, each one of <see cref="DashboardValues.Warnings"/>. Empty when none.</summary>
+    IReadOnlyList<string> Warnings,
+    /// <summary>In-game minutes until the next required rest stop. Omitted when the game doesn't report one (fatigue off).</summary>
+    int? RestMinutes = null
+);
+
+/// <summary>The fixed vocabularies <see cref="DashboardInfo"/> may use.</summary>
+public static class DashboardValues
+{
+    public static readonly string[] Signals = ["off", "left", "right", "hazard"];
+    public static readonly string[] Lights = ["off", "parking", "low", "high"];
+
+    /// <summary>fuel, oil pressure, coolant temperature, battery voltage, AdBlue, air pressure, parking brake.</summary>
+    public static readonly string[] Warnings = ["fuel", "oil", "coolant", "battery", "adblue", "air", "parkingBrake"];
+}
 
 /// <summary>
 /// A one-off, transient in-game event (e.g. a crash) detected by the bridge since its

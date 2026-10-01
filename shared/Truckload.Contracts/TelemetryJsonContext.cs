@@ -15,6 +15,7 @@ namespace Truckload.Contracts;
 [JsonSerializable(typeof(TelemetryPayload))]
 [JsonSerializable(typeof(JobInfo))]
 [JsonSerializable(typeof(TruckInfo))]
+[JsonSerializable(typeof(DashboardInfo))]
 [JsonSerializable(typeof(TelemetryEvent))]
 [JsonSerializable(typeof(IReadOnlyList<TelemetryEvent>))]
 public partial class TelemetryJsonContext : JsonSerializerContext

@@ -52,6 +52,7 @@ they can never drift from each other.
 | `job` | object \| `null` | `null` when disconnected or no active job. |
 | `truck` | object \| `null` | `null` when disconnected. |
 | `events` | array \| `null` | Optional, transient, one-off alerts (see below). Omitted/`null` on almost every tick. |
+| `dashboard` | object \| `null` | Optional live instrument-cluster state (see below). Omitted when the source can't provide it. |
 
 ## Events (schema v1, additive)
 
@@ -93,6 +94,52 @@ existing steady-state stats.
   characters (`TelemetryPayloadValidator`), well within the existing 4096-byte
   body limit even though in practice the bridge only ever emits one event per
   tick today.
+
+## Dashboard (schema v1, additive)
+
+`dashboard` is the live instrument cluster shown on every panel and overlay. Unlike the
+slow-moving `truck` stats it changes constantly (speed), so the bridge re-sends whenever
+any dashboard value changes (still never faster than once a second).
+
+```json
+"dashboard": {
+  "speed": 62,
+  "signal": "left",
+  "lights": "low",
+  "wipers": true,
+  "warnings": ["fuel", "battery"]
+}
+```
+
+| Field | Type | Notes |
+|---|---|---|
+| `speed` | int | Absolute speed (reversing is positive) in the payload's `units`: **mph** for imperial, **km/h** for metric. 0-500. |
+| `signal` | `"off"` \| `"left"` \| `"right"` \| `"hazard"` | Turn-signal **stalk** position (steady), not the flashing lamp, which would alias against a 1-second poll. Both stalks (or the hazard switch) report `hazard`. |
+| `lights` | `"off"` \| `"parking"` \| `"low"` \| `"high"` | Highest headlight state that is on (high beats low beats parking). |
+| `wipers` | bool | Wipers running. |
+| `warnings` | string[] | Active warning lamps, each one of `fuel`, `oil`, `coolant`, `battery`, `adblue`, `air`, `parkingBrake`. Empty when none; max 7. |
+| `restMinutes` | int \| omitted | In-game minutes until the next required rest (TruckTel `rest.stop`). Omitted when the game reports none or `0` (the SDK says the channel is implementation-dependent when the fatigue simulation is off, and `0` is ambiguous). The panels show "Rest in 4h 30m", in warning color at 60 minutes or less. |
+
+**Not available from the game:** the SCS telemetry SDK has no **weather** channel (the wipers flag is the closest
+signal), and the only **location** data is raw world coordinates (`truck.world.placement`), with no city or state
+names, so neither is in the payload.
+
+The fuel *level* is not duplicated here: the dashboard uses `truck.fuelPercent`.
+
+Source mapping (TruckTel, in `bridge/Truckload.Bridge/TruckTel/TruckTelMapper.cs`): `truck.speed`
+(m/s), `truck.lblinker` / `truck.rblinker` / `truck.hazard.warning`, `truck.light.parking` /
+`beam.low` / `beam.high`, `truck.wipers`, `truck.fuel.warning`, `truck.oil.pressure.warning`,
+`truck.water.temperature.warning`, `truck.battery.voltage.warning`, `truck.adblue.warning`,
+`truck.brake.air.pressure.warning` / `.emergency`, `truck.brake.parking`. The Funbit source maps the
+equivalent Funbit fields on a best-effort basis (unverified against a real Funbit server).
+
+**Compatibility:** the backend rejects unknown fields, so a bridge that sends `dashboard` needs a
+backend that knows it. Deploy the backend first. Older bridges simply omit the field, and the
+frontend renders no dashboard when it is absent.
+
+The frontend (`src/src/components/Dashboard.jsx`) shows it in the panel, mobile view and video
+overlay (full / HUD variants) and in the video component (compact: speed, signals, fuel and
+warnings only). The crash toast (`events`) auto-dismisses after 15 seconds.
 
 ## Limits (enforced by the backend, and by the bridge before sending)
 

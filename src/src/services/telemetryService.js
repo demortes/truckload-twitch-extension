@@ -25,6 +25,7 @@ let state = {
   units: 'imperial',
   job: null,
   truck: null,
+  dashboard: null,
   convoy: null,
   gameTime: null,
   lastTs: null,
@@ -76,6 +77,8 @@ function applyPayload(payload) {
     units: payload.units === 'metric' ? 'metric' : 'imperial',
     job: payload.job ?? null,
     truck: payload.truck ?? null,
+    // Optional: absent when the bridge is older than the dashboard feature (see docs/telemetry-contract.md).
+    dashboard: payload.dashboard ?? null,
     lastTs: payload.ts ?? Math.floor(Date.now() / 1000),
     // Transient, one-off alerts (see docs/telemetry-contract.md#events). Present only on the
     // tick where the bridge detected something noteworthy; every other tick resets this to an
@@ -107,7 +110,9 @@ async function fetchInitialState(backendUrl, channelId) {
   try {
     const response = await fetch(`${backendUrl}/api/telemetry/${channelId}`);
     if (response.ok) {
-      applyPayload(await response.json());
+      // The stored snapshot still carries the last tick's events; replaying a past crash toast on every
+      // page load would be wrong, so only live PubSub messages may raise events.
+      applyPayload({ ...(await response.json()), events: [] });
     }
   } catch (err) {
     console.warn('[Telemetry] Failed to fetch initial state:', err);

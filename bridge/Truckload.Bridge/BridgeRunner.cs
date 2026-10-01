@@ -155,8 +155,24 @@ public sealed class BridgeRunner
         return state;
     }
 
+    // Records compare list members by reference, so the dashboard (whose warnings are a list) is
+    // compared by value separately; otherwise every tick would look like a change.
     private static bool PayloadsEqualIgnoringTimestamp(TelemetryPayload a, TelemetryPayload b) =>
-        (a with { Ts = 0 }) == (b with { Ts = 0 });
+        (a with { Ts = 0, Dashboard = null }) == (b with { Ts = 0, Dashboard = null })
+        && DashboardsEqual(a.Dashboard, b.Dashboard);
+
+    private static bool DashboardsEqual(DashboardInfo? a, DashboardInfo? b)
+    {
+        if (a is null || b is null)
+            return a is null && b is null;
+
+        return a.Speed == b.Speed
+            && a.Signal == b.Signal
+            && a.Lights == b.Lights
+            && a.Wipers == b.Wipers
+            && a.RestMinutes == b.RestMinutes
+            && a.Warnings.SequenceEqual(b.Warnings);
+    }
 }
 
 public sealed class RunnerState

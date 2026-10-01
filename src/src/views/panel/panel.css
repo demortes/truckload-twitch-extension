@@ -34,6 +34,12 @@
   gap: var(--spacing-md);
 }
 
+/* Children keep their natural height and the area scrolls; without this the flex column squeezes the
+   (overflow: hidden) sections once the dashboard pushes the content past the fixed panel height. */
+.panel-content-area > * {
+  flex-shrink: 0;
+}
+
 /* Override panel styles for panel view - full width panels */
 .panel-view .panel {
   max-width: none;

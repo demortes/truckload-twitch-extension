@@ -73,4 +73,51 @@ public class TelemetryPayloadValidatorTests
                 .Select(i => new TelemetryEvent("crash", "warning", $"event {i}"))
                 .ToArray(),
         }));
+
+    private static readonly DashboardInfo Dash = new(50, "left", "low", true, new[] { "fuel", "air" });
+
+    [Fact]
+    public void Validate_AcceptsAWellFormedDashboard() =>
+        Assert.Empty(TelemetryPayloadValidator.Validate(Valid with { Dashboard = Dash }));
+
+    [Fact]
+    public void Validate_AllowsNoDashboard() =>
+        Assert.Empty(TelemetryPayloadValidator.Validate(Valid with { Dashboard = null }));
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(501)]
+    public void Validate_RejectsSpeedOutOfRange(int speed) =>
+        Assert.NotEmpty(TelemetryPayloadValidator.Validate(Valid with { Dashboard = Dash with { Speed = speed } }));
+
+    [Theory]
+    [InlineData("flashing")]
+    [InlineData("")]
+    public void Validate_RejectsUnknownSignals(string signal) =>
+        Assert.NotEmpty(TelemetryPayloadValidator.Validate(Valid with { Dashboard = Dash with { Signal = signal } }));
+
+    [Fact]
+    public void Validate_RejectsUnknownLights() =>
+        Assert.NotEmpty(TelemetryPayloadValidator.Validate(Valid with { Dashboard = Dash with { Lights = "disco" } }));
+
+    [Fact]
+    public void Validate_RejectsUnknownWarnings() =>
+        Assert.NotEmpty(TelemetryPayloadValidator.Validate(Valid with { Dashboard = Dash with { Warnings = new[] { "flux-capacitor" } } }));
+
+    [Fact]
+    public void Validate_RejectsTooManyWarnings() =>
+        Assert.NotEmpty(TelemetryPayloadValidator.Validate(Valid with
+        {
+            Dashboard = Dash with { Warnings = Enumerable.Repeat("fuel", 8).ToArray() },
+        }));
+
+    [Fact]
+    public void Validate_AcceptsARestTimer() =>
+        Assert.Empty(TelemetryPayloadValidator.Validate(Valid with { Dashboard = Dash with { RestMinutes = 270 } }));
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(10081)]
+    public void Validate_RejectsRestMinutesOutOfRange(int minutes) =>
+        Assert.NotEmpty(TelemetryPayloadValidator.Validate(Valid with { Dashboard = Dash with { RestMinutes = minutes } }));
 }

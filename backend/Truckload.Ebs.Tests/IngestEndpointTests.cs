@@ -111,4 +111,35 @@ public class IngestEndpointTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(SamplePayload.Job!.Cargo, stored!.Job!.Cargo);
         Assert.Equal(SamplePayload.Truck!.FuelPercent, stored.Truck!.FuelPercent);
     }
+
+    [Fact]
+    public async Task Ingest_StoresAndReturnsTheDashboard()
+    {
+        var (client, channelId, key) = await AuthorizedChannelAsync("ing-dash");
+        client.DefaultRequestHeaders.Add("X-Api-Key", key);
+        var payload = SamplePayload with { Dashboard = new DashboardInfo(63, "hazard", "high", true, new[] { "battery" }) };
+
+        var ingest = await client.PostAsync("/api/ingest", Json(payload));
+        Assert.Equal(HttpStatusCode.OK, ingest.StatusCode);
+
+        var stored = await (await client.GetAsync($"/api/telemetry/{channelId}")).Content.ReadFromJsonAsync<JsonElement>();
+        var dash = stored.GetProperty("dashboard");
+        Assert.Equal(63, dash.GetProperty("speed").GetInt32());
+        Assert.Equal("hazard", dash.GetProperty("signal").GetString());
+        Assert.Equal("high", dash.GetProperty("lights").GetString());
+        Assert.True(dash.GetProperty("wipers").GetBoolean());
+        Assert.Equal("battery", dash.GetProperty("warnings")[0].GetString());
+    }
+
+    [Fact]
+    public async Task Ingest_RejectsAnInvalidDashboard()
+    {
+        var (client, _, key) = await AuthorizedChannelAsync("ing-dash-bad");
+        client.DefaultRequestHeaders.Add("X-Api-Key", key);
+        var payload = SamplePayload with { Dashboard = new DashboardInfo(10, "sideways", "off", false, Array.Empty<string>()) };
+
+        var response = await client.PostAsync("/api/ingest", Json(payload));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }
