@@ -202,7 +202,7 @@ jobs:
           path: artifacts
           pattern: '*-release-asset*'
           merge-multiple: true
-      - name: Create draft release
+      - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
