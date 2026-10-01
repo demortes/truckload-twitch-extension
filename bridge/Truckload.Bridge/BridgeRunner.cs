@@ -18,6 +18,13 @@ public sealed class BridgeRunner
     private readonly TimeProvider _time;
     private readonly Action<string> _log;
 
+    /// <summary>
+    /// Consecutive failed polls tolerated before the bridge tells viewers the game is disconnected.
+    /// A single failed poll (a dropped local connection, TruckTel busy loading a save) must not flip
+    /// the panel to OFFLINE and back.
+    /// </summary>
+    public const int DisconnectGraceTicks = 3;
+
     private static readonly TimeSpan MinSendInterval = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan InitialBackoff = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan MaxBackoff = TimeSpan.FromSeconds(60);
@@ -38,6 +45,18 @@ public sealed class BridgeRunner
         var nowUnix = now.ToUnixTimeSeconds();
 
         var fetch = await _source.FetchAsync(cancellationToken);
+
+        if (fetch.Available)
+        {
+            state.ConsecutiveUnavailable = 0;
+        }
+        else if (++state.ConsecutiveUnavailable < DisconnectGraceTicks)
+        {
+            if (_options.Verbose)
+                _log($"[info] telemetry source unavailable ({state.ConsecutiveUnavailable}/{DisconnectGraceTicks}), waiting before reporting disconnected");
+            return null;
+        }
+
         var payload = fetch.Available
             ? TelemetryMapper.Map(fetch.Data!, nowUnix, _options.Units)
             : TelemetryMapper.Disconnected(nowUnix);
@@ -147,6 +166,9 @@ public sealed class RunnerState
     public DateTimeOffset? BackoffUntil { get; set; }
     public TimeSpan? CurrentBackoff { get; set; }
     public bool? LastLoggedUnavailable { get; set; }
+
+    /// <summary>How many polls in a row have failed; see <see cref="BridgeRunner.DisconnectGraceTicks"/>.</summary>
+    public int ConsecutiveUnavailable { get; set; }
     public BridgeExitReason? ExitRequested { get; set; }
 
     /// <summary>The truck info from the previous tick, used by <see cref="TelemetryEventDetector"/>.

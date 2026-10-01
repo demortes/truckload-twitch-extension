@@ -23,6 +23,49 @@ public class BridgeRunnerTests
     };
 
     [Fact]
+    public async Task BriefOutage_DoesNotReportDisconnected()
+    {
+        var time = new FakeTimeProvider();
+        var source = new FakeTelemetrySource { NextResult = TelemetryFetchResult.Ok(Connected()) };
+        var runner = new BridgeRunner(source, sender: null, Options(), time);
+        var state = new RunnerState();
+        await runner.TickAsync(state, CancellationToken.None); // connected payload sent
+
+        source.NextResult = TelemetryFetchResult.Unavailable("blip");
+        time.Advance(TimeSpan.FromSeconds(1));
+        var during = await runner.TickAsync(state, CancellationToken.None);
+
+        Assert.Null(during); // nothing sent: viewers keep seeing the last good state
+        Assert.True(state.LastSent!.Connected);
+
+        source.NextResult = TelemetryFetchResult.Ok(Connected());
+        time.Advance(TimeSpan.FromSeconds(1));
+        await runner.TickAsync(state, CancellationToken.None);
+        Assert.Equal(0, state.ConsecutiveUnavailable); // recovery resets the counter
+    }
+
+    [Fact]
+    public async Task SustainedOutage_ReportsDisconnectedAfterTheGracePeriod()
+    {
+        var time = new FakeTimeProvider();
+        var source = new FakeTelemetrySource { NextResult = TelemetryFetchResult.Ok(Connected()) };
+        var runner = new BridgeRunner(source, sender: null, Options(), time);
+        var state = new RunnerState();
+        await runner.TickAsync(state, CancellationToken.None);
+
+        source.NextResult = TelemetryFetchResult.Unavailable("game closed");
+        Truckload.Contracts.TelemetryPayload? last = null;
+        for (var i = 0; i < BridgeRunner.DisconnectGraceTicks; i++)
+        {
+            time.Advance(TimeSpan.FromSeconds(1));
+            last = await runner.TickAsync(state, CancellationToken.None);
+        }
+
+        Assert.NotNull(last);
+        Assert.False(last!.Connected);
+    }
+
+    [Fact]
     public async Task FirstTick_AlwaysSends()
     {
         var time = new FakeTimeProvider();
