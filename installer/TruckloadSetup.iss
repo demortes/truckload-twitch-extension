@@ -76,6 +76,77 @@ Filename: "{app}\Truckload.Bridge.exe"; WorkingDir: "{app}"; Description: "Start
 var
   GamesPage: TInputDirWizardPage;
   KeyPage: TInputQueryWizardPage;
+  ExistingConfigChecked: Boolean;
+
+// ---------------------------------------------------------------- tiny JSON string helpers
+// truckload-bridge.json is flat and written by us, so a small scanner is enough; this finds the
+// string value of "Name": "value" and returns the 1-based positions of its opening and closing quotes.
+
+function FindJsonStringSpan(const Json, Name: String; var OpenQ, CloseQ: Integer): Boolean;
+var
+  P, I: Integer;
+begin
+  Result := False;
+  P := Pos('"' + Name + '"', Json);
+  if P = 0 then Exit;
+  I := P + Length(Name) + 2;
+  while (I <= Length(Json)) and (Json[I] <> ':') do I := I + 1;
+  I := I + 1;
+  while (I <= Length(Json)) and (Json[I] <= ' ') do I := I + 1;
+  if (I > Length(Json)) or (Json[I] <> '"') then Exit; // missing, null or not a string
+  OpenQ := I;
+  I := I + 1;
+  while I <= Length(Json) do
+  begin
+    if Json[I] = '\' then
+      I := I + 2
+    else if Json[I] = '"' then
+    begin
+      CloseQ := I;
+      Result := True;
+      Exit;
+    end
+    else
+      I := I + 1;
+  end;
+end;
+
+function JsonUnescape(const S: String): String;
+var
+  I: Integer;
+begin
+  Result := '';
+  I := 1;
+  while I <= Length(S) do
+  begin
+    if (S[I] = '\') and (I < Length(S)) then I := I + 1;
+    Result := Result + S[I];
+    I := I + 1;
+  end;
+end;
+
+function ReadJsonString(const Json, Name: String): String;
+var
+  OpenQ, CloseQ: Integer;
+begin
+  Result := '';
+  if FindJsonStringSpan(Json, Name, OpenQ, CloseQ) then
+    Result := JsonUnescape(Copy(Json, OpenQ + 1, CloseQ - OpenQ - 1));
+end;
+
+function ExistingConfigPath: String;
+begin
+  Result := AddBackslash(WizardDirValue) + 'truckload-bridge.json';
+end;
+
+function ReadExistingConfig: String;
+var
+  Content: AnsiString;
+begin
+  Result := '';
+  if FileExists(ExistingConfigPath) and LoadStringFromFile(ExistingConfigPath, Content) then
+    Result := String(Content);
+end;
 
 // ---------------------------------------------------------------- Steam game detection
 
@@ -186,7 +257,8 @@ begin
     'Connect to your channel',
     'Paste your Truckload ingest key',
     'On Twitch, open your Creator Dashboard, then the Truckload extension''s Config page, and ' +
-    'click Generate API Key. Paste the key below. Leave it blank to keep an existing key or to set it up later.');
+    'click Generate API Key. Paste the key below. If you already set Truckload up, your existing key is filled in ' +
+    'automatically; leave it as is to keep using it. Leave it blank to set it up later.');
   KeyPage.Add('Ingest key:', False);
   KeyPage.Add('Backend ingest URL (leave as is unless you were told otherwise):', False);
   KeyPage.Values[0] := ExpandConstant('{param:KEY|}');
@@ -235,7 +307,27 @@ end;
 
 // Only the ticked games' folder boxes are editable.
 procedure CurPageChanged(CurPageID: Integer);
+var
+  Existing, ExistingKey, ExistingUrl: String;
 begin
+  // Pick up the key from a previous install the first time the key page is shown (the install
+  // folder is final by then). An explicit /KEY= on the command line is never replaced.
+  if (CurPageID = KeyPage.ID) and not ExistingConfigChecked then
+  begin
+    ExistingConfigChecked := True;
+    Existing := ReadExistingConfig;
+    ExistingKey := Trim(ReadJsonString(Existing, 'IngestKey'));
+    ExistingUrl := Trim(ReadJsonString(Existing, 'IngestUrl'));
+    if (ExistingKey <> '') and (Trim(KeyPage.Values[0]) = '') then
+    begin
+      KeyPage.Values[0] := ExistingKey;
+      if ExistingUrl <> '' then KeyPage.Values[1] := ExistingUrl;
+      KeyPage.SubCaptionLabel.Caption :=
+        'We found the ingest key from your existing Truckload setup and filled it in below. ' +
+        'Click Next to keep using it, or paste a new key if you generated one.';
+    end;
+  end;
+
   if CurPageID = GamesPage.ID then
   begin
     GamesPage.Edits[0].Enabled := WizardIsComponentSelected('ats');
@@ -287,15 +379,36 @@ end;
 
 // ---------------------------------------------------------------- install / uninstall
 
+// Replaces the string value of "Name" in Json in place. Returns False if the property isn't there.
+function ReplaceJsonString(var Json: String; const Name, Value: String): Boolean;
+var
+  OpenQ, CloseQ: Integer;
+begin
+  Result := FindJsonStringSpan(Json, Name, OpenQ, CloseQ);
+  if Result then
+    Json := Copy(Json, 1, OpenQ) + JsonEscape(Value) + Copy(Json, CloseQ, Length(Json));
+end;
+
 procedure WriteBridgeConfig;
 var
-  ConfigPath, Key, Url, Json: String;
+  ConfigPath, Key, Url, Json, Existing: String;
 begin
   ConfigPath := ExpandConstant('{app}\truckload-bridge.json');
   Key := Trim(KeyPage.Values[0]);
   Url := Trim(KeyPage.Values[1]);
   if Key = '' then Exit; // keep whatever config already exists
   if Url = '' then Url := '{#DefaultIngestUrl}';
+
+  // Existing config: update just the key and URL so the streamer's other settings (units, source,
+  // telemetry URL, ...) survive a reinstall or upgrade. Unchanged values leave the file untouched.
+  Existing := ReadExistingConfig;
+  Json := Existing;
+  if (Existing <> '') and ReplaceJsonString(Json, 'IngestKey', Key) and ReplaceJsonString(Json, 'IngestUrl', Url) then
+  begin
+    if Json <> Existing then
+      SaveStringToFile(ConfigPath, Json, False);
+    Exit;
+  end;
 
   Json := '{' + #13#10 +
     '  "IngestUrl": "' + JsonEscape(Url) + '",' + #13#10 +

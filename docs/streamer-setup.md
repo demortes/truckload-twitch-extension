@@ -25,7 +25,9 @@ and run it. It:
 2. installs the [TruckTel](https://github.com/jvanstraten/TruckTel) telemetry
    plugin into each game you ticked (run the installer again later to add the
    other game),
-3. asks for your ingest key from step 2 and saves it, and
+3. asks for your ingest key from step 2 and saves it (if you already set
+   Truckload up, your existing key is found and filled in, and your other Bridge
+   settings are kept when you update), and
 4. installs the Truckload Bridge with a Start menu / desktop shortcut.
 
 Windows may show a "Windows protected your PC" (SmartScreen) prompt because the
