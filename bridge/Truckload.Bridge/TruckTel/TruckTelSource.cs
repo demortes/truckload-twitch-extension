@@ -29,6 +29,17 @@ public sealed class TruckTelSource : ITelemetrySource
 
     public async Task<TelemetryFetchResult> FetchAsync(CancellationToken cancellationToken)
     {
+        // TruckTel closes idle keep-alive connections, so a pooled connection can be dead by the
+        // time it is reused ("connection forcibly closed"). One retry gets a fresh connection.
+        var first = await TryFetchAsync(cancellationToken);
+        if (first.Available || cancellationToken.IsCancellationRequested)
+            return first;
+
+        return await TryFetchAsync(cancellationToken);
+    }
+
+    private async Task<TelemetryFetchResult> TryFetchAsync(CancellationToken cancellationToken)
+    {
         try
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

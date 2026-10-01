@@ -52,12 +52,16 @@ Console.CancelKeyPress += (_, e) =>
 var time = TimeProvider.System;
 using var httpClient = new HttpClient();
 
+// The local telemetry servers (TruckTel in particular) close idle keep-alive connections, which makes a
+// pooled client fail on every few requests. Loopback connections are cheap, so never reuse them.
+using var telemetryHttpClient = new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.Zero });
+
 ITelemetrySource source = options.Demo
     ? new DemoSource(time, options.DemoGame)
     : options.ResolvedSource switch
     {
-        BridgeOptions.SourceFunbit => new FunbitSource(httpClient, options.ResolvedTelemetryUrl),
-        BridgeOptions.SourceTrucktel => new TruckTelSource(httpClient, options.ResolvedTelemetryUrl),
+        BridgeOptions.SourceFunbit => new FunbitSource(telemetryHttpClient, options.ResolvedTelemetryUrl),
+        BridgeOptions.SourceTrucktel => new TruckTelSource(telemetryHttpClient, options.ResolvedTelemetryUrl),
         var other => throw new ArgumentException($"Unknown --source '{other}'. Use 'trucktel' or 'funbit'."),
     };
 

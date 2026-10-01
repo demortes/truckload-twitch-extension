@@ -107,6 +107,34 @@ public class TruckTelTests
         Assert.Null(raw.Job!.DestinationCity);
     }
 
+    private sealed class FailFirstRequestHandler : HttpMessageHandler
+    {
+        public int Calls { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Calls++;
+            if (Calls == 1)
+                return Task.FromException<HttpResponseMessage>(new HttpRequestException("connection forcibly closed"));
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"game.id":"ats"}""", System.Text.Encoding.UTF8, "application/json"),
+            });
+        }
+    }
+
+    [Fact]
+    public async Task Source_RetriesOnceWhenAReusedConnectionIsDead()
+    {
+        var handler = new FailFirstRequestHandler();
+        var source = new TruckTelSource(new HttpClient(handler), "http://localhost:25852");
+
+        var result = await source.FetchAsync(CancellationToken.None);
+
+        Assert.True(result.Available);
+        Assert.Equal("ats", result.Data!.Game!.GameName);
+    }
+
     [Theory]
     [InlineData("http://localhost:8080", "http://localhost:8080/api/rest/flat")]
     [InlineData("http://localhost:8080/", "http://localhost:8080/api/rest/flat")]
