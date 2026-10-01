@@ -38,14 +38,14 @@ public static class TelemetryMapper
             Units: units,
             Job: MapJob(raw, units),
             Truck: MapTruck(raw.Truck, units),
-            Dashboard: MapDashboard(raw.Truck, units)
+            Dashboard: MapDashboard(raw.Truck, units, ToMinutes(raw.Game?.NextRestStopTime))
         );
     }
 
     private const double KmhPerMph = 1.60934;
 
     /// <summary>The instrument-cluster state, or null when there is no truck data.</summary>
-    internal static DashboardInfo? MapDashboard(FunbitTruck? truck, string units)
+    internal static DashboardInfo? MapDashboard(FunbitTruck? truck, string units, int? restMinutes = null)
     {
         if (truck is null)
             return null;
@@ -65,7 +65,10 @@ public static class TelemetryMapper
         if (truck.AirPressureWarningOn || truck.AirPressureEmergencyOn) warnings.Add("air");
         if (truck.ParkBrakeOn) warnings.Add("parkingBrake");
 
-        return new DashboardInfo(speed, signal, lights, truck.WipersOn, warnings);
+        // Zero is ambiguous (due now, or fatigue simulation off and no real value), so only a positive time is shown.
+        int? rest = restMinutes is > 0 ? restMinutes : null;
+
+        return new DashboardInfo(speed, signal, lights, truck.WipersOn, warnings, rest);
     }
 
     /// <summary>Hazards are both stalks at once (or the dedicated hazard switch); that is reported as one state.</summary>

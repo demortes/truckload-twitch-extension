@@ -27,6 +27,7 @@ const mockTelemetry = {
     lights: 'low',
     wipers: true,
     warnings: ['battery'],
+    restMinutes: 275,
   },
   convoy: {
     active: true,

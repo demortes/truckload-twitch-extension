@@ -53,6 +53,8 @@ public sealed class DemoSource : ITelemetrySource
         var fuelPercent = Math.Max(35, 100 - elapsed / 20);
         var damage = Math.Min(15, elapsed / 600);
 
+        game.NextRestStopTime = DateTime.MinValue.AddMinutes(Math.Max(1, 330 - elapsed / 3));
+
         var truck = new FunbitTruck
         {
             Make = "Peterbilt",

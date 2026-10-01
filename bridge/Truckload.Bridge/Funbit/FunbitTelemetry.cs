@@ -20,6 +20,9 @@ public sealed class FunbitGame
     [JsonPropertyName("paused")] public bool Paused { get; set; }
     /// <summary>e.g. "ATS" or "ETS2"; the mapper lower-cases it.</summary>
     [JsonPropertyName("gameName")] public string? GameName { get; set; }
+
+    /// <summary>Time until the next required rest, as Funbit's timespan-as-datetime (null when not reported).</summary>
+    [JsonPropertyName("nextRestStopTime")] public DateTime? NextRestStopTime { get; set; }
 }
 
 public sealed class FunbitTruck

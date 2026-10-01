@@ -22,6 +22,10 @@ public static class TruckTelMapper
             Connected = gameId is not null,
             Paused = GetBool(flat, "frame.paused"),
             GameName = gameId,
+            // rest.stop: in-game minutes until the next required rest (absent when fatigue is off).
+            NextRestStopTime = TryGetDouble(flat, "rest.stop", out var restMinutes)
+                ? MinutesToFunbitTimespan(Math.Max(0, restMinutes))
+                : null,
         };
 
         var truck = new FunbitTruck

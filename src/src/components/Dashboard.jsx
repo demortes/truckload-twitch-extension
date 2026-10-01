@@ -45,6 +45,17 @@ function Chip({ on, label, children }) {
   );
 }
 
+/** Minutes until the next required rest, as "4h 30m" / "45m". */
+function formatRest(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+// At or under this many minutes the rest timer turns into a warning.
+const REST_SOON_MINUTES = 60;
+
 function fuelClass(percent) {
   if (percent > 50) return '';
   if (percent > 25) return 'warning';
@@ -54,12 +65,15 @@ function fuelClass(percent) {
 export default function Dashboard({ dashboard, truck, units = 'imperial', live = true, variant = 'full' }) {
   if (!live || !dashboard) return null;
 
-  const { speed, signal, lights, wipers, warnings = [] } = dashboard;
+  const { speed, signal, lights, wipers, warnings = [], restMinutes } = dashboard;
   const speedUnit = units === 'metric' ? 'km/h' : 'mph';
   const leftOn = signal === 'left' || signal === 'hazard';
   const rightOn = signal === 'right' || signal === 'hazard';
   const fuel = truck?.fuelPercent;
   const activeWarnings = warnings.filter((w) => WARNINGS[w]);
+  const restSoon = restMinutes != null && restMinutes <= REST_SOON_MINUTES;
+  // The compact drawer is tight, so it only shows the rest timer once it is urgent.
+  const showRest = restMinutes != null && (variant !== 'compact' || restSoon);
 
   return (
     <div className={`dashboard dashboard--${variant}`} role="group" aria-label="Truck dashboard">
@@ -108,6 +122,15 @@ export default function Dashboard({ dashboard, truck, units = 'imperial', live =
             <path d="M3 18a9 9 0 0118 0" />
             <path d="M12 18L8 8" />
           </Chip>
+        </div>
+      )}
+
+      {showRest && (
+        <div className={`dash-rest ${restSoon ? 'is-soon' : ''}`}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" />
+          </svg>
+          <span>Rest in {formatRest(restMinutes)}</span>
         </div>
       )}
 

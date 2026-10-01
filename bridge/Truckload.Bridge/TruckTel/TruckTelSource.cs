@@ -9,7 +9,7 @@ namespace Truckload.Bridge.TruckTel;
 /// </summary>
 public sealed class TruckTelSource : ITelemetrySource
 {
-    private static readonly string[] Prefixes = ["game", "frame", "truck", "job", "trailer"];
+    private static readonly string[] Prefixes = ["game", "frame", "rest", "truck", "job", "trailer"];
 
     private readonly HttpClient _http;
     private readonly string _baseUrl;

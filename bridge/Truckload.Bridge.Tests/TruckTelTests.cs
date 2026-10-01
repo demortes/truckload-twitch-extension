@@ -178,4 +178,19 @@ public class TruckTelTests
 
         Assert.Equal("left", TelemetryMapper.Map(TruckTelMapper.ToFunbit(flat), 1, "auto").Dashboard!.Signal);
     }
+
+    [Theory]
+    [InlineData("""{"game.id":"ats","rest.stop":270}""", 270)] // 4h 30m until the next rest
+    [InlineData("""{"game.id":"ats","rest.stop":0}""", null)] // ambiguous (due now, or fatigue off): not shown
+    [InlineData("""{"game.id":"ats","rest.stop":-15}""", null)]
+    [InlineData("""{"game.id":"ats"}""", null)] // channel absent (fatigue simulation off)
+    public void Dashboard_ReportsMinutesUntilTheNextRest(string json, int? expected)
+    {
+        var flat = Parse(json);
+        flat["truck.brand"] = JsonDocument.Parse("\"Kenworth\"").RootElement; // a truck must exist for a dashboard
+
+        var payload = TelemetryMapper.Map(TruckTelMapper.ToFunbit(flat), ts: 1, unitsMode: "auto");
+
+        Assert.Equal(expected, payload.Dashboard!.RestMinutes);
+    }
 }

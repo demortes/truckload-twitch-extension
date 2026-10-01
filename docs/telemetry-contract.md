@@ -118,6 +118,11 @@ any dashboard value changes (still never faster than once a second).
 | `lights` | `"off"` \| `"parking"` \| `"low"` \| `"high"` | Highest headlight state that is on (high beats low beats parking). |
 | `wipers` | bool | Wipers running. |
 | `warnings` | string[] | Active warning lamps, each one of `fuel`, `oil`, `coolant`, `battery`, `adblue`, `air`, `parkingBrake`. Empty when none; max 7. |
+| `restMinutes` | int \| omitted | In-game minutes until the next required rest (TruckTel `rest.stop`). Omitted when the game reports none or `0` (the SDK says the channel is implementation-dependent when the fatigue simulation is off, and `0` is ambiguous). The panels show "Rest in 4h 30m", in warning color at 60 minutes or less. |
+
+**Not available from the game:** the SCS telemetry SDK has no **weather** channel (the wipers flag is the closest
+signal), and the only **location** data is raw world coordinates (`truck.world.placement`), with no city or state
+names, so neither is in the payload.
 
 The fuel *level* is not duplicated here: the dashboard uses `truck.fuelPercent`.
 

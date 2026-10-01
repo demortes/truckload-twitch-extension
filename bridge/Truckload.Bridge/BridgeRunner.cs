@@ -170,6 +170,7 @@ public sealed class BridgeRunner
             && a.Signal == b.Signal
             && a.Lights == b.Lights
             && a.Wipers == b.Wipers
+            && a.RestMinutes == b.RestMinutes
             && a.Warnings.SequenceEqual(b.Warnings);
     }
 }

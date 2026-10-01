@@ -110,4 +110,14 @@ public class TelemetryPayloadValidatorTests
         {
             Dashboard = Dash with { Warnings = Enumerable.Repeat("fuel", 8).ToArray() },
         }));
+
+    [Fact]
+    public void Validate_AcceptsARestTimer() =>
+        Assert.Empty(TelemetryPayloadValidator.Validate(Valid with { Dashboard = Dash with { RestMinutes = 270 } }));
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(10081)]
+    public void Validate_RejectsRestMinutesOutOfRange(int minutes) =>
+        Assert.NotEmpty(TelemetryPayloadValidator.Validate(Valid with { Dashboard = Dash with { RestMinutes = minutes } }));
 }

@@ -49,7 +49,9 @@ public sealed record DashboardInfo(
     string Lights,
     bool Wipers,
     /// <summary>Active warning lamps, each one of <see cref="DashboardValues.Warnings"/>. Empty when none.</summary>
-    IReadOnlyList<string> Warnings
+    IReadOnlyList<string> Warnings,
+    /// <summary>In-game minutes until the next required rest stop. Omitted when the game doesn't report one (fatigue off).</summary>
+    int? RestMinutes = null
 );
 
 /// <summary>The fixed vocabularies <see cref="DashboardInfo"/> may use.</summary>

@@ -88,11 +88,15 @@ public static class TelemetryPayloadValidator
     }
 
     private const int MaxSpeed = 500;
+    private const int MaxRestMinutes = 7 * 24 * 60;
 
     private static void ValidateDashboard(DashboardInfo dashboard, List<string> errors)
     {
         if (dashboard.Speed is < 0 or > MaxSpeed)
             errors.Add($"'dashboard.speed' must be between 0 and {MaxSpeed}.");
+
+        if (dashboard.RestMinutes is < 0 or > MaxRestMinutes)
+            errors.Add($"'dashboard.restMinutes' must be between 0 and {MaxRestMinutes}.");
 
         if (!DashboardValues.Signals.Contains(dashboard.Signal))
             errors.Add($"'dashboard.signal' must be one of: {string.Join(", ", DashboardValues.Signals)}.");
