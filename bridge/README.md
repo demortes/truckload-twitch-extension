@@ -16,9 +16,12 @@ of them.
   into the game's `plugins` folder
   (`<game>/bin/win_x64/plugins` on Windows, `bin/linux_x64/plugins` on Linux),
   then start the game. TruckTel runs its web server inside the game, so there
-  is no separate program to run. It listens on port 8080 by default; if that
-  port is taken, change it in TruckTel's `config.yaml` and pass
-  `--telemetry-url http://localhost:<port>` to the bridge.
+  is no separate program to run. The installer also adds a small `truckload`
+  app folder (`plugins/trucktel/truckload/`, with a `config.yaml` and
+  `www/index.html`) that identifies Truckload to TruckTel and serves telemetry on
+  port **25852**, which is what the bridge reads by default. If you installed
+  TruckTel by hand (its own default app listens on 8080) or changed the port,
+  pass `--telemetry-url http://localhost:<port>`.
 - Prefer Funbit's ETS2/ATS Telemetry Web Server instead? Use
   `--source funbit` (default `http://localhost:25555/api/ets2/telemetry`).
 - An ingest URL and API key from the extension's **Config** page on your
@@ -92,7 +95,7 @@ for the full list. The important ones:
 | `--ingest-url` | Backend ingest endpoint |
 | `--key` | Ingest API key from the Config page |
 | `--source trucktel\|funbit` | Telemetry source (default `trucktel`) |
-| `--telemetry-url` | Local telemetry server (default `http://localhost:8080` for TruckTel, `http://localhost:25555/api/ets2/telemetry` for Funbit) |
+| `--telemetry-url` | Local telemetry server (default `http://localhost:25852` for TruckTel, `http://localhost:25555/api/ets2/telemetry` for Funbit) |
 | `--poll-ms` | Poll interval; minimum and default 1000ms |
 | `--heartbeat-s` | Send a keep-alive even if nothing changed (default 30s) |
 | `--units auto\|imperial\|metric` | Distance units; `auto` picks imperial for ATS, metric for ETS2 |
@@ -126,7 +129,7 @@ Truckload.Bridge.exe --demo --ingest-url https://your-backend-domain/api/ingest 
 - **"Could not read telemetry from TruckTel"** — start ATS/ETS2 with the
   TruckTel plugin installed (check `trucktel/log.txt` in the plugins folder),
   or pass `--telemetry-url http://localhost:<port>` if you changed its port.
-  Open `http://localhost:8080/api/rest/flat/game` in a browser while the game
+  Open `http://localhost:25852/api/rest/flat/game` in a browser while the game
   runs; it should return JSON that includes `game.id`.
 - The bridge never sends more than once a second, and keeps a connection
   alive with a heartbeat every 30 seconds even while your telemetry doesn't

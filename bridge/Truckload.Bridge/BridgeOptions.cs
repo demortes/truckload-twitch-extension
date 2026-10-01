@@ -15,7 +15,8 @@ public sealed class BridgeOptions
     public const string SourceTrucktel = "trucktel";
     public const string SourceFunbit = "funbit";
     public const string FunbitDefaultUrl = "http://localhost:25555/api/ets2/telemetry";
-    public const string TruckTelDefaultUrl = "http://localhost:8080/api/rest/flat";
+    /// <summary>Port of the "truckload" TruckTel app installed by the Windows installer (trucktel-app/config.yaml).</summary>
+    public const string TruckTelDefaultUrl = "http://localhost:25852/api/rest/flat";
 
     /// <summary>
     /// The telemetry source to use. Configs saved before TruckTel support have a Funbit-style
@@ -32,6 +33,7 @@ public sealed class BridgeOptions
         !string.IsNullOrWhiteSpace(TelemetryUrl)
             ? TelemetryUrl!
             : ResolvedSource == SourceFunbit ? FunbitDefaultUrl : TruckTelDefaultUrl;
+
     public int PollMs { get; set; } = 1000;
     public int HeartbeatSeconds { get; set; } = 30;
 
@@ -165,7 +167,7 @@ public sealed class BridgeOptions
           --key <key>            Ingest API key from the extension's Config page
           --source trucktel|funbit
                                  Where telemetry comes from (default: trucktel, the TruckTel game plugin)
-          --telemetry-url <url>  Local telemetry server URL (default: http://localhost:8080/api/rest/flat for
+          --telemetry-url <url>  Local telemetry server URL (default: http://localhost:25852/api/rest/flat for
                                  trucktel, http://localhost:25555/api/ets2/telemetry for funbit)
           --poll-ms <ms>         Poll interval, minimum and default 1000
           --heartbeat-s <s>      Send a keep-alive even when nothing changed (default 30)
