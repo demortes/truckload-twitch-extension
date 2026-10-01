@@ -17,8 +17,8 @@ public static class IngestEndpoints
             IBroadcastThrottle throttle,
             ILogger<Program> logger) =>
         {
-            var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault()
-                      ?? context.Request.Query["key"].FirstOrDefault();
+            // Header only. A key in the query string would be written to proxy and CDN access logs.
+            var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault();
 
             if (string.IsNullOrEmpty(apiKey))
                 {
@@ -113,6 +113,6 @@ public static class IngestEndpoints
                 broadcast = result.OutcomeText,
                 retryAfterMs = result.RetryAfter?.TotalMilliseconds,
             });
-        });
+        }).RequireRateLimiting(RateLimiting.IngestKeyPolicy);
     }
 }

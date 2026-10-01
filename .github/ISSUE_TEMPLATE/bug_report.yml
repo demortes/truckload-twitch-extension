@@ -1,0 +1,48 @@
+name: Bug report
+description: Something isn't working
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! **Do not paste your ingest key, extension secret or any token.** Redact them from logs and screenshots.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Where does it happen?
+      options:
+        - Twitch extension (panel / overlay / mobile / video component / config page)
+        - Bridge (the app on the streaming PC)
+        - Windows installer
+        - Backend (the extension backend service)
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The release tag (for example v1.6.0). The Bridge prints its version on start; the backend reports it at /api/health/ready.
+    validations:
+      required: true
+  - type: dropdown
+    id: game
+    attributes:
+      label: Game
+      options: [American Truck Simulator, Euro Truck Simulator 2, Both, Not applicable]
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: For the Bridge, run it with `--verbose` and paste the console output. Redact any keys.
+      render: text

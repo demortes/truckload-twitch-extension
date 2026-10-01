@@ -41,6 +41,8 @@ public class TestWebAppFactory : WebApplicationFactory<Program>
                 ["Twitch:ExtensionSecret"] = TestSecret,
                 ["Twitch:MinBroadcastIntervalMs"] = "1000",
                 ["Database:AutoMigrate"] = "false",
+                // Tests post bursts of payloads with one key; rate limiting has its own tests that lower this.
+                ["RateLimiting:IngestPerKeyPerSecond"] = "1000",
             });
         });
 

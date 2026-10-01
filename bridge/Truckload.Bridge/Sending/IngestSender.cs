@@ -32,7 +32,7 @@ public sealed class IngestSender
             Content = new StringContent(json, Encoding.UTF8, "application/json"),
         };
         request.Headers.Add("X-Api-Key", _ingestKey);
-        request.Headers.UserAgent.ParseAdd("Truckload-Bridge/1.0");
+        request.Headers.UserAgent.ParseAdd($"Truckload-Bridge/{BridgeVersion.Current}");
 
         try
         {
@@ -43,6 +43,12 @@ public sealed class IngestSender
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
                 return new SendResult(SendOutcome.InvalidKey, Detail: "The backend rejected the ingest key.");
+
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                var wait = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(5);
+                return new SendResult(SendOutcome.RateLimited, wait, "The backend asked the bridge to slow down.");
+            }
 
             if (!response.IsSuccessStatusCode)
                 return new SendResult(SendOutcome.Failed, Detail: $"Backend returned {(int)response.StatusCode}.");

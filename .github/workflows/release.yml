@@ -17,8 +17,9 @@ jobs:
   backend-image:
     name: Build and push backend image
     runs-on: ubuntu-latest
-    env:
-      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      started_at: ${{ steps.version.outputs.started_at }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,17 +56,24 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/truckload-ebs:${{ steps.version.outputs.version }}
             ghcr.io/${{ github.repository_owner }}/truckload-ebs:latest
-      - name: Record release in Datadog (DORA deployment)
+
+  datadog-deployment:
+    name: Record release in Datadog (DORA)
+    needs: [backend-image]
+    runs-on: ubuntu-latest
+    # Holds the API key, so it runs no repository code: just the pinned datadog-ci CLI. Skipped without the secret.
+    env:
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      DD_SITE: ${{ vars.DD_SITE || 'datadoghq.com' }}
+    steps:
+      - name: Record deployment
         if: ${{ env.DD_API_KEY != '' }}
-        env:
-          DD_API_KEY: ${{ secrets.DD_API_KEY }}
-          DD_SITE: ${{ vars.DD_SITE || 'datadoghq.com' }}
         run: >
-          npx --yes @datadog/datadog-ci dora deployment
+          npx --yes @datadog/datadog-ci@5.24.1 dora deployment
           --service truckload-ebs
           --env production
-          --version ${{ steps.version.outputs.version }}
-          --started-at ${{ steps.version.outputs.started_at }}
+          --version ${{ needs.backend-image.outputs.version }}
+          --started-at ${{ needs.backend-image.outputs.started_at }}
           --git-repository-url ${{ github.server_url }}/${{ github.repository }}
           --git-commit-sha ${{ github.sha }}
 
