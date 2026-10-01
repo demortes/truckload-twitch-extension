@@ -1,0 +1,38 @@
+version: 2
+
+# Weekly version updates, grouped so a week's minor/patch bumps arrive as one PR per ecosystem.
+# (Security updates are separate and open immediately.)
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: nuget
+    directories:
+      - "/backend/Truckload.Ebs"
+      - "/backend/Truckload.Ebs.Tests"
+      - "/bridge/Truckload.Bridge"
+      - "/bridge/Truckload.Bridge.Tests"
+      - "/shared/Truckload.Contracts"
+    schedule:
+      interval: weekly
+    groups:
+      dotnet:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: npm
+    directory: "/src"
+    schedule:
+      interval: weekly
+    groups:
+      frontend:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: docker
+    directory: "/backend/Truckload.Ebs"
+    schedule:
+      interval: weekly

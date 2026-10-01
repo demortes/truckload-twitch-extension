@@ -38,3 +38,6 @@ npm-debug.log*
 test-results/
 installer/staging/
 installer/output/
+
+# Local Claude Code tooling (settings, worktrees)
+.claude/

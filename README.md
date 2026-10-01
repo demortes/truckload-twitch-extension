@@ -98,3 +98,17 @@ See `docs/twitch-console-checklist.md` and `docs/twitch-review-guide.md`.
 Convoy/TruckersMP status (code is present but feature-flagged off — see
 `src/src/config/features.js`), further Kubernetes polish, non-Windows bridge
 builds, and historical telemetry storage.
+
+## Contributing and security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Please report security problems privately as described in
+[SECURITY.md](SECURITY.md), not as public issues.
+
+## License and disclaimer
+
+[MIT](LICENSE). Third-party components (including the bundled TruckTel plugin) are listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Truckload is an independent fan project. It is **not affiliated with, endorsed by, or sponsored by SCS Software
+or Twitch Interactive**. "American Truck Simulator" and "Euro Truck Simulator 2" are trademarks of SCS Software
+s.r.o.; "Twitch" is a trademark of Twitch Interactive, Inc.

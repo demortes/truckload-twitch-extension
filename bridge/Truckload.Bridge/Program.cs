@@ -35,7 +35,7 @@ if (options.Save)
     Console.WriteLine($"Saved configuration to {Path.Combine(baseDirectory, BridgeOptions.ConfigFileName)}");
 }
 
-Console.WriteLine("Truckload Bridge v1.0.0");
+Console.WriteLine($"Truckload Bridge v{BridgeVersion.Current}");
 Console.WriteLine($"  Telemetry source : {(options.Demo ? $"demo ({options.DemoGame})" : $"{options.ResolvedSource} at {options.ResolvedTelemetryUrl}")}");
 Console.WriteLine($"  Ingest URL       : {(options.DryRun ? "(dry run, not sending)" : options.IngestUrl)}");
 Console.WriteLine($"  Ingest key       : {(options.DryRun ? "(none)" : Mask(options.IngestKey))}");

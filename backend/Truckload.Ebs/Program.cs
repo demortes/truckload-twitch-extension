@@ -38,6 +38,7 @@ builder.Services.AddOpenTelemetry()
         .AddMeter(AppMetrics.MeterName)
         .AddMeter("Npgsql")
         .AddMeter("Microsoft.EntityFrameworkCore")
+        .AddMeter("Microsoft.AspNetCore.RateLimiting")
         .AddOtlpExporter());
 
 // Configuration
@@ -61,6 +62,9 @@ builder.Services.AddScoped<ITelemetryService, TelemetryService>();
 builder.Services.AddHttpClient<ITwitchPubSubService, TwitchPubSubService>();
 
 // CORS — Twitch extensions run in iframes on various domains; scope to what the API actually needs.
+// Rate limits for the public write endpoints (see Configuration/RateLimitSettings.cs).
+builder.Services.AddEbsRateLimiting(builder.Configuration);
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -80,6 +84,7 @@ builder.WebHost.ConfigureKestrel(options =>
 var app = builder.Build();
 
 app.UseCors();
+app.UseRateLimiter();
 
 // Map endpoints
 app.MapHomeEndpoints();
