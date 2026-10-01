@@ -24,4 +24,28 @@ public class HomeEndpointTests : IClassFixture<TestWebAppFactory>
         Assert.Contains("https://localhost/api/ingest", html);
         Assert.Contains("Generate API Key", html);
     }
+
+    [Theory]
+    [InlineData("/logo.png")]
+    [InlineData("/favicon.ico")]
+    public async Task Logo_IsServedAsAPng(string path)
+    {
+        var response = await _factory.CreateClient().GetAsync(path);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("image/png", response.Content.Headers.ContentType?.MediaType);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        Assert.Equal(new byte[] { 0x89, 0x50, 0x4E, 0x47 }, bytes[..4]); // PNG signature
+        Assert.Contains("max-age", response.Headers.CacheControl?.ToString());
+    }
+
+    [Fact]
+    public async Task Root_ShowsTheLogo_AndTheCspAllowsOnlySelfImages()
+    {
+        var response = await _factory.CreateClient().GetAsync("/");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Contains("src=\"/logo.png\"", html);
+        Assert.Contains("img-src 'self'", string.Join(";", response.Headers.GetValues("Content-Security-Policy")));
+    }
 }

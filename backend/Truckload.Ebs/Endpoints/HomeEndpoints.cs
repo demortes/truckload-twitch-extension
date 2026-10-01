@@ -10,9 +10,30 @@ public static class HomeEndpoints
     {
         app.MapGet("/", (HttpContext context, IOptions<SiteSettings> site) =>
         {
-            context.Response.Headers.ContentSecurityPolicy = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'";
+            context.Response.Headers.ContentSecurityPolicy = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'";
             return Results.Content(RenderPage(context.Request, site.Value), "text/html; charset=utf-8");
         }).ExcludeFromDescription();
+
+        // The logo (embedded in the assembly) for the landing page and as the favicon.
+        app.MapGet("/logo.png", ServeLogo).ExcludeFromDescription();
+        app.MapGet("/favicon.ico", ServeLogo).ExcludeFromDescription();
+    }
+
+    private static readonly byte[] LogoBytes = LoadLogo();
+
+    private static byte[] LoadLogo()
+    {
+        using var stream = typeof(HomeEndpoints).Assembly.GetManifestResourceStream("Truckload.Ebs.Assets.logo.png")
+            ?? throw new InvalidOperationException("The embedded logo is missing.");
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+        return buffer.ToArray();
+    }
+
+    private static IResult ServeLogo(HttpContext context)
+    {
+        context.Response.Headers.CacheControl = "public, max-age=86400";
+        return Results.Bytes(LogoBytes, "image/png");
     }
 
     private static string RenderPage(HttpRequest request, SiteSettings site)
@@ -32,6 +53,7 @@ public static class HomeEndpoints
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Truckload</title>
+<link rel="icon" type="image/png" href="/logo.png">
 <style>
   :root { color-scheme: light dark; --bg:#fff; --fg:#1b1b1f; --muted:#5f6368; --card:#f4f4f7; --accent:#9146ff; }
   @media (prefers-color-scheme: dark) { :root { --bg:#0e0e10; --fg:#efeff1; --muted:#adadb8; --card:#18181b; } }
@@ -47,7 +69,7 @@ public static class HomeEndpoints
 </head>
 <body>
 <main>
-  <h1>Truckload</h1>
+  <h1><img src="/logo.png" alt="" width="44" height="44" style="vertical-align: middle; border-radius: 10px; margin-right: 10px;">Truckload</h1>
   <p class="lead">Live job and truck stats from American Truck Simulator and Euro Truck Simulator 2, shown to your viewers right on your Twitch stream.</p>
   <p>This is the Truckload backend service. Streamers set up in three steps:</p>
   <ol>

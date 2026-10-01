@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FEATURES } from '../../config/features';
 import { getConfiguredPlayerIds, onConfigurationChanged, savePlayerIds } from '../../services/convoyConfig';
+import logo from '../../assets/logo.png';
 import '../../index.css';
 import './config.css';
 
@@ -179,7 +180,10 @@ function Config() {
     return (
       <div className="config-view">
         <div className="config-card">
-          <h1>Truckload Configuration</h1>
+          <h1 className="config-title">
+            <img className="config-logo" src={logo} alt="" width="32" height="32" />
+            Truckload Configuration
+          </h1>
           <p className="config-muted">Waiting for Twitch Authorization...</p>
         </div>
       </div>
@@ -206,7 +210,10 @@ function Config() {
   return (
     <div className="config-view">
       <div className="config-card">
-        <h1>Truckload Configuration</h1>
+        <h1 className="config-title">
+            <img className="config-logo" src={logo} alt="" width="32" height="32" />
+            Truckload Configuration
+          </h1>
         <p className="config-intro">
           Run the Truckload Bridge app on your streaming PC to send live job and truck
           telemetry from ATS/ETS2 to your viewers.

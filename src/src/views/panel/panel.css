@@ -19,10 +19,17 @@
 }
 
 .panel-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.5px;
   color: var(--text-secondary);
+}
+
+.panel-logo-img {
+  border-radius: 4px;
 }
 
 .panel-content-area {

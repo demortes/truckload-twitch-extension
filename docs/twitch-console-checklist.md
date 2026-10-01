@@ -26,6 +26,11 @@ Enable all four view types this release ships:
 Upload the zip produced by `npm run build && npm run zip` in `src/` (or the
 release asset from CI).
 
+## Branding
+
+The extension icon is `docs/assets/logo.png` (100x100 PNG with transparent corners). `docs/assets/social-preview.png`
+(1280x640) is the GitHub social preview image (repo Settings, General, Social preview).
+
 ## Capabilities
 
 - **Allowlist for URL Fetching Domains**: add your backend's HTTPS domain

@@ -32,6 +32,9 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\Truckload.Bridge.exe
+; Paths are relative to this script. The .ico is the same one embedded in Truckload.Bridge.exe.
+SetupIconFile=..\bridge\Truckload.Bridge\truckload.ico
+WizardSmallImageFile=..\docs\assets\logo.png
 CloseApplications=yes
 
 [Types]

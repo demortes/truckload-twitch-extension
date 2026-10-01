@@ -31,6 +31,17 @@
   margin-bottom: var(--spacing-md);
 }
 
+.config-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.config-logo {
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
 .config-card h2 {
   font-size: 15px;
   font-weight: 600;

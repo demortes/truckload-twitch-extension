@@ -9,6 +9,7 @@ import EventToast from '../../components/EventToast';
 import { useTelemetry } from '../../hooks/useTelemetry';
 import { useJobHistory } from '../../hooks/useJobHistory';
 import { FEATURES } from '../../config/features';
+import logo from '../../assets/logo.png';
 import './panel.css';
 
 const JobIcon = (
@@ -50,7 +51,10 @@ function PanelApp() {
     <div className="panel-view">
       <EventToast events={events} />
       <div className="panel-header-bar">
-        <span className="panel-logo">TRUCKLOAD</span>
+        <span className="panel-logo">
+          <img className="panel-logo-img" src={logo} alt="" width="18" height="18" />
+          TRUCKLOAD
+        </span>
         <StatusBadge connected={connected} stale={stale} />
       </div>
       <div className="panel-content-area">

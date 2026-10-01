@@ -11,6 +11,8 @@ export default defineConfig({
   // so asset URLs must be relative.
   base: './',
   build: {
+    // Never inline images as data: URIs (the 4 KB logo would be); Twitch's CSP is simplest with real files from 'self'.
+    assetsInlineLimit: 0,
     rollupOptions: {
       input: {
         panel: resolve(root, 'panel.html'),

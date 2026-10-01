@@ -9,6 +9,7 @@
     <AssemblyName>Truckload.Bridge</AssemblyName>
     <Version>1.0.0</Version>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <ApplicationIcon>truckload.ico</ApplicationIcon>
     <!-- RuntimeIdentifier is intentionally NOT pinned here so `dotnet build`/`dotnet test` work
          on any host OS. Release publishing passes -r win-x64/linux-x64/osx-x64 explicitly, one
          per platform (see bridge/README.md and .github/workflows/release.yml). -->
