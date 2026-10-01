@@ -15,7 +15,11 @@ public sealed class BridgeOptions
     public const string SourceTrucktel = "trucktel";
     public const string SourceFunbit = "funbit";
     public const string FunbitDefaultUrl = "http://localhost:25555/api/ets2/telemetry";
-    public const string TruckTelDefaultUrl = "http://localhost:8080/api/rest/flat";
+    /// <summary>Port of the "truckload" TruckTel app installed by the Windows installer (trucktel-app/config.yaml).</summary>
+    public const string TruckTelDefaultUrl = "http://localhost:25852/api/rest/flat";
+
+    /// <summary>TruckTel's own default port, used when it was installed by hand without our app directory.</summary>
+    public const string TruckTelFallbackUrl = "http://localhost:8080/api/rest/flat";
 
     /// <summary>
     /// The telemetry source to use. Configs saved before TruckTel support have a Funbit-style
@@ -32,6 +36,15 @@ public sealed class BridgeOptions
         !string.IsNullOrWhiteSpace(TelemetryUrl)
             ? TelemetryUrl!
             : ResolvedSource == SourceFunbit ? FunbitDefaultUrl : TruckTelDefaultUrl;
+
+    /// <summary>
+    /// Every URL to try, in order. An explicit TelemetryUrl is used alone; otherwise TruckTel falls
+    /// back from the Truckload app's port to TruckTel's default 8080.
+    /// </summary>
+    public IReadOnlyList<string> ResolvedTelemetryUrls =>
+        !string.IsNullOrWhiteSpace(TelemetryUrl) || ResolvedSource == SourceFunbit
+            ? [ResolvedTelemetryUrl]
+            : [TruckTelDefaultUrl, TruckTelFallbackUrl];
     public int PollMs { get; set; } = 1000;
     public int HeartbeatSeconds { get; set; } = 30;
 

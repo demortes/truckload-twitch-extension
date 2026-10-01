@@ -107,6 +107,56 @@ public class TruckTelTests
         Assert.Null(raw.Job!.DestinationCity);
     }
 
+    private sealed class PortRoutingHandler(Func<int, HttpResponseMessage?> respond) : HttpMessageHandler
+    {
+        public List<int> Ports { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var port = request.RequestUri!.Port;
+            Ports.Add(port);
+            var response = respond(port);
+            return response is null
+                ? Task.FromException<HttpResponseMessage>(new HttpRequestException("connection refused"))
+                : Task.FromResult(response);
+        }
+    }
+
+    private static HttpResponseMessage Json(string json) =>
+        new(System.Net.HttpStatusCode.OK) { Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json") };
+
+    [Fact]
+    public async Task Source_FallsBackToTheSecondUrl_AndSticksWithIt()
+    {
+        var handler = new PortRoutingHandler(port => port == 8080 ? Json("""{"game.id":"ats"}""") : null);
+        var source = new TruckTelSource(new HttpClient(handler),
+            ["http://localhost:25852/api/rest/flat", "http://localhost:8080/api/rest/flat"]);
+
+        var first = await source.FetchAsync(CancellationToken.None);
+        Assert.True(first.Available);
+        Assert.Equal("ats", first.Data!.Game!.GameName);
+        Assert.Contains(25852, handler.Ports); // tried the preferred port first
+
+        handler.Ports.Clear();
+        var second = await source.FetchAsync(CancellationToken.None);
+        Assert.True(second.Available);
+        Assert.DoesNotContain(25852, handler.Ports); // now sticks with the one that worked
+    }
+
+    [Fact]
+    public async Task Source_ReportsEveryUrlItTried_WhenNoneAnswer()
+    {
+        var handler = new PortRoutingHandler(_ => null);
+        var source = new TruckTelSource(new HttpClient(handler),
+            ["http://localhost:25852/api/rest/flat", "http://localhost:8080/api/rest/flat"]);
+
+        var result = await source.FetchAsync(CancellationToken.None);
+
+        Assert.False(result.Available);
+        Assert.Contains("25852", result.Error);
+        Assert.Contains("8080", result.Error);
+    }
+
     [Theory]
     [InlineData("http://localhost:8080", "http://localhost:8080/api/rest/flat")]
     [InlineData("http://localhost:8080/", "http://localhost:8080/api/rest/flat")]

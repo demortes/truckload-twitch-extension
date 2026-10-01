@@ -56,6 +56,13 @@ Source: "staging\trucktel.dll"; DestDir: "{code:AtsPluginDir}"; Flags: ignorever
 Source: "staging\trucktel\LICENSE"; DestDir: "{code:AtsPluginDir}\trucktel"; Flags: ignoreversion; Components: ats
 Source: "staging\trucktel.dll"; DestDir: "{code:Ets2PluginDir}"; Flags: ignoreversion; Components: ets2
 Source: "staging\trucktel\LICENSE"; DestDir: "{code:Ets2PluginDir}\trucktel"; Flags: ignoreversion; Components: ets2
+; Our own TruckTel "app" directory (plugins\trucktel\truckload), as TruckTel's app docs ask: a config.yaml
+; and a www\index.html that identify the app. config.yaml is not overwritten if it already exists, so a
+; user's port change survives upgrades. Nothing else inside plugins\trucktel is ever touched.
+Source: "trucktel-app\config.yaml"; DestDir: "{code:AtsPluginDir}\trucktel\truckload"; Flags: onlyifdoesntexist; Components: ats
+Source: "trucktel-app\www\index.html"; DestDir: "{code:AtsPluginDir}\trucktel\truckload\www"; Flags: ignoreversion; Components: ats
+Source: "trucktel-app\config.yaml"; DestDir: "{code:Ets2PluginDir}\trucktel\truckload"; Flags: onlyifdoesntexist; Components: ets2
+Source: "trucktel-app\www\index.html"; DestDir: "{code:Ets2PluginDir}\trucktel\truckload\www"; Flags: ignoreversion; Components: ets2
 
 [Icons]
 Name: "{group}\Truckload Bridge"; Filename: "{app}\Truckload.Bridge.exe"; WorkingDir: "{app}"
@@ -319,6 +326,12 @@ begin
   begin
     DeleteFile(Dir + '\trucktel.dll');
     DeleteFile(Dir + '\trucktel\LICENSE');
+    // Our app directory. Delete only files we installed, then the directories if (and only if)
+    // they are empty, so anything TruckTel or the user added there is left alone.
+    DeleteFile(Dir + '\trucktel\truckload\config.yaml');
+    DeleteFile(Dir + '\trucktel\truckload\www\index.html');
+    RemoveDir(Dir + '\trucktel\truckload\www');
+    RemoveDir(Dir + '\trucktel\truckload');
   end;
 end;
 
