@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { telemetryService } from '../services';
+import { onAuthorized } from '../services/twitchAuth';
 import { getConfiguredPlayerIds, onConfigurationChanged } from '../services/convoyConfig';
 import { FEATURES } from '../config/features';
 import mockTelemetry from '../dev/mockTelemetry';
@@ -25,7 +26,9 @@ export function useTelemetry() {
 
     const unsubscribe = telemetryService.subscribe(setTelemetry);
 
-    window.Twitch.ext.onAuthorized((auth) => {
+    // Must go through the shared listener: Twitch keeps only one onAuthorized callback, and
+    // useJobHistory (same views) also needs authorization. See services/twitchAuth.js.
+    const unsubscribeAuth = onAuthorized((auth) => {
       telemetryService.initialize({
         backendUrl: BACKEND_URL,
         channelId: auth.channelId,
@@ -43,6 +46,7 @@ export function useTelemetry() {
 
     return () => {
       unsubscribe();
+      unsubscribeAuth();
       // Note: cleanup() is intentionally not called here. React (StrictMode, and
       // Twitch's own onAuthorized token-refresh calls) can re-run this effect;
       // the service's initialize()/listen() are idempotent, so leaving the

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import mockJobHistory from '../dev/mockJobHistory';
+import { onAuthorized } from '../services/twitchAuth';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
 
@@ -40,7 +41,8 @@ export function useJobHistory() {
       }
     };
 
-    window.Twitch.ext.onAuthorized((auth) => {
+    // Shared listener: Twitch keeps only one onAuthorized callback (see services/twitchAuth.js).
+    const unsubscribeAuth = onAuthorized((auth) => {
       channelId = auth.channelId;
       fetchHistory();
       if (!pollTimer) {
@@ -50,6 +52,7 @@ export function useJobHistory() {
 
     return () => {
       cancelled = true;
+      unsubscribeAuth();
       if (pollTimer) clearInterval(pollTimer);
     };
   }, []);
