@@ -37,8 +37,43 @@ public static class TelemetryMapper
             Game: game,
             Units: units,
             Job: MapJob(raw, units),
-            Truck: MapTruck(raw.Truck, units)
+            Truck: MapTruck(raw.Truck, units),
+            Dashboard: MapDashboard(raw.Truck, units)
         );
+    }
+
+    private const double KmhPerMph = 1.60934;
+
+    /// <summary>The instrument-cluster state, or null when there is no truck data.</summary>
+    internal static DashboardInfo? MapDashboard(FunbitTruck? truck, string units)
+    {
+        if (truck is null)
+            return null;
+
+        var kmh = Math.Abs(truck.Speed);
+        var speed = (int)Math.Round(units == TelemetryUnits.Metric ? kmh : kmh / KmhPerMph);
+
+        // Hazards are both stalks at once (or the dedicated hazard switch); report that as one state.
+        var signal = truck.HazardWarning || (truck.BlinkerLeftActive && truck.BlinkerRightActive) ? "hazard"
+            : truck.BlinkerLeftActive ? "left"
+            : truck.BlinkerRightActive ? "right"
+            : "off";
+
+        var lights = truck.LightsBeamHighOn ? "high"
+            : truck.LightsBeamLowOn ? "low"
+            : truck.LightsParkingOn ? "parking"
+            : "off";
+
+        var warnings = new List<string>(DashboardValues.Warnings.Length);
+        if (truck.FuelWarningOn) warnings.Add("fuel");
+        if (truck.OilPressureWarningOn) warnings.Add("oil");
+        if (truck.WaterTemperatureWarningOn) warnings.Add("coolant");
+        if (truck.BatteryVoltageWarningOn) warnings.Add("battery");
+        if (truck.AdblueWarningOn) warnings.Add("adblue");
+        if (truck.AirPressureWarningOn || truck.AirPressureEmergencyOn) warnings.Add("air");
+        if (truck.ParkBrakeOn) warnings.Add("parkingBrake");
+
+        return new DashboardInfo(speed, signal, lights, truck.WipersOn, warnings);
     }
 
     private static JobInfo? MapJob(FunbitTelemetry raw, string units)

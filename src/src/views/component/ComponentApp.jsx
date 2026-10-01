@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTelemetry } from '../../hooks/useTelemetry';
+import Dashboard from '../../components/Dashboard';
 import './component.css';
 
 function formatTime(minutes) {
@@ -10,7 +11,7 @@ function formatTime(minutes) {
 }
 
 function ComponentApp() {
-  const { job, truck, connected, stale } = useTelemetry();
+  const { job, truck, dashboard, units, connected, stale } = useTelemetry();
   const [expanded, setExpanded] = useState(false);
   const offline = !connected || stale;
 
@@ -32,7 +33,10 @@ function ComponentApp() {
       </button>
 
       {expanded && (
-        <div className="component-content" aria-live="polite">
+        <div className="component-content">
+          {/* Outside the live region: the speed changes every second and must not be announced. */}
+          <Dashboard dashboard={dashboard} truck={truck} units={units} live={!offline} variant="compact" />
+          <div aria-live="polite">
           {job?.active && (
             <div className="component-section">
               <div className="component-row">
@@ -66,6 +70,7 @@ function ComponentApp() {
               </div>
             </div>
           )}
+          </div>
         </div>
       )}
     </div>

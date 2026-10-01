@@ -25,6 +25,7 @@ let state = {
   units: 'imperial',
   job: null,
   truck: null,
+  dashboard: null,
   convoy: null,
   gameTime: null,
   lastTs: null,
@@ -76,6 +77,8 @@ function applyPayload(payload) {
     units: payload.units === 'metric' ? 'metric' : 'imperial',
     job: payload.job ?? null,
     truck: payload.truck ?? null,
+    // Optional: absent when the bridge is older than the dashboard feature (see docs/telemetry-contract.md).
+    dashboard: payload.dashboard ?? null,
     lastTs: payload.ts ?? Math.floor(Date.now() / 1000),
     // Transient, one-off alerts (see docs/telemetry-contract.md#events). Present only on the
     // tick where the bridge detected something noteworthy; every other tick resets this to an

@@ -135,4 +135,82 @@ public class TelemetryMapperTests
         Assert.Null(payload.Truck);
         Assert.Null(payload.Game);
     }
+
+    private static FunbitTruck Cluster(Action<FunbitTruck>? configure = null)
+    {
+        var truck = new FunbitTruck { Make = "Peterbilt", Model = "579" };
+        configure?.Invoke(truck);
+        return truck;
+    }
+
+    [Theory]
+    [InlineData(80.4672, "imperial", 50)] // km/h -> mph
+    [InlineData(80.4672, "metric", 80)]
+    [InlineData(-8.0, "metric", 8)] // reversing shows an absolute speed
+    [InlineData(0.0, "imperial", 0)]
+    public void Dashboard_ConvertsSpeedToThePayloadUnits(double kmh, string units, int expected) =>
+        Assert.Equal(expected, TelemetryMapper.MapDashboard(Cluster(t => t.Speed = kmh), units)!.Speed);
+
+    [Fact]
+    public void Dashboard_IsNullWithoutATruck() =>
+        Assert.Null(TelemetryMapper.MapDashboard(null, "imperial"));
+
+    [Theory]
+    [InlineData(false, false, false, "off")]
+    [InlineData(true, false, false, "left")]
+    [InlineData(false, true, false, "right")]
+    [InlineData(true, true, false, "hazard")]
+    [InlineData(false, false, true, "hazard")]
+    public void Dashboard_ReportsTheTurnSignalState(bool left, bool right, bool hazard, string expected)
+    {
+        var dash = TelemetryMapper.MapDashboard(Cluster(t =>
+        {
+            t.BlinkerLeftActive = left;
+            t.BlinkerRightActive = right;
+            t.HazardWarning = hazard;
+        }), "imperial");
+
+        Assert.Equal(expected, dash!.Signal);
+    }
+
+    [Fact]
+    public void Dashboard_HighBeamBeatsLowBeamBeatsParkingLights()
+    {
+        string Lights(Action<FunbitTruck> c) => TelemetryMapper.MapDashboard(Cluster(c), "imperial")!.Lights;
+
+        Assert.Equal("off", Lights(_ => { }));
+        Assert.Equal("parking", Lights(t => t.LightsParkingOn = true));
+        Assert.Equal("low", Lights(t => { t.LightsParkingOn = true; t.LightsBeamLowOn = true; }));
+        Assert.Equal("high", Lights(t => { t.LightsParkingOn = true; t.LightsBeamLowOn = true; t.LightsBeamHighOn = true; }));
+    }
+
+    [Fact]
+    public void Dashboard_ListsActiveWarningsAndWipers()
+    {
+        var dash = TelemetryMapper.MapDashboard(Cluster(t =>
+        {
+            t.FuelWarningOn = true;
+            t.BatteryVoltageWarningOn = true;
+            t.AirPressureEmergencyOn = true;
+            t.ParkBrakeOn = true;
+            t.WipersOn = true;
+        }), "imperial")!;
+
+        Assert.True(dash.Wipers);
+        Assert.Equal(new[] { "fuel", "battery", "air", "parkingBrake" }, dash.Warnings);
+        Assert.Empty(TelemetryMapper.MapDashboard(Cluster(), "imperial")!.Warnings);
+    }
+
+    [Fact]
+    public void Map_IncludesTheDashboardInThePayload()
+    {
+        var raw = AtsSample();
+        raw.Truck!.Speed = 80.4672;
+        raw.Truck.LightsBeamLowOn = true;
+
+        var payload = TelemetryMapper.Map(raw, ts: 1, unitsMode: "auto");
+
+        Assert.Equal(50, payload.Dashboard!.Speed);
+        Assert.Equal("low", payload.Dashboard.Lights);
+    }
 }

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import './EventToast.css';
 
-const TOAST_DURATION_MS = 6000;
+// Alerts like a possible crash stay up long enough to be noticed on a busy stream, then dismiss themselves.
+const TOAST_DURATION_MS = 15000;
 
 const SEVERITY_ICON = {
   critical: (

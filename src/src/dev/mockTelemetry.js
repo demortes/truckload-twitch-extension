@@ -21,6 +21,13 @@ const mockTelemetry = {
     damagePercent: 3,
     odometer: 124532,
   },
+  dashboard: {
+    speed: 62,
+    signal: 'off',
+    lights: 'low',
+    wipers: true,
+    warnings: ['battery'],
+  },
   convoy: {
     active: true,
     members: [

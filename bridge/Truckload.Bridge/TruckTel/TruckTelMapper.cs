@@ -37,6 +37,26 @@ public static class TruckTelMapper
             WearCabin = GetDouble(flat, "truck.wear.cabin"),
             WearChassis = GetDouble(flat, "truck.wear.chassis"),
             WearWheels = GetDouble(flat, "truck.wear.wheels"),
+
+            // Instrument cluster. Speed is m/s in the SCS SDK; the intermediate model uses km/h.
+            Speed = GetDouble(flat, "truck.speed") * 3.6,
+            // truck.lblinker/rblinker are the stalk position (steady); truck.light.*blinker is the
+            // flashing lamp, which would alias against a 1-second poll, so it is deliberately not used.
+            BlinkerLeftActive = GetBool(flat, "truck.lblinker"),
+            BlinkerRightActive = GetBool(flat, "truck.rblinker"),
+            HazardWarning = GetBool(flat, "truck.hazard.warning"),
+            LightsParkingOn = GetBool(flat, "truck.light.parking"),
+            LightsBeamLowOn = GetBool(flat, "truck.light.beam.low"),
+            LightsBeamHighOn = GetBool(flat, "truck.light.beam.high"),
+            WipersOn = GetBool(flat, "truck.wipers"),
+            FuelWarningOn = GetBool(flat, "truck.fuel.warning"),
+            OilPressureWarningOn = GetBool(flat, "truck.oil.pressure.warning"),
+            WaterTemperatureWarningOn = GetBool(flat, "truck.water.temperature.warning"),
+            BatteryVoltageWarningOn = GetBool(flat, "truck.battery.voltage.warning"),
+            AdblueWarningOn = GetBool(flat, "truck.adblue.warning"),
+            AirPressureWarningOn = GetBool(flat, "truck.brake.air.pressure.warning"),
+            AirPressureEmergencyOn = GetBool(flat, "truck.brake.air.pressure.emergency"),
+            ParkBrakeOn = GetBool(flat, "truck.brake.parking"),
         };
 
         var trailer = new FunbitTrailer

@@ -141,4 +141,41 @@ public class TruckTelTests
     [InlineData("http://localhost:9000/api/rest/flat", "http://localhost:9000/api/rest/flat")]
     public void NormalizeUrl_AddsTheRestPathWhenMissing(string input, string expected) =>
         Assert.Equal(expected, TruckTelSource.NormalizeUrl(input));
+
+    [Fact]
+    public void Dashboard_IsMappedFromTheSdkKeys()
+    {
+        // Values taken from a live ATS session: hazards on, wipers on, battery warning, parking brake.
+        var flat = Parse("""
+            {
+              "game.id": "ats",
+              "truck.brand": "Kenworth", "truck.name": "W900",
+              "truck.speed": 22.352,
+              "truck.lblinker": false, "truck.rblinker": false, "truck.hazard.warning": true,
+              "truck.light.lblinker": true, "truck.light.rblinker": true,
+              "truck.light.beam.low": true, "truck.light.beam.high": false, "truck.light.parking": true,
+              "truck.wipers": true,
+              "truck.fuel.warning": false, "truck.battery.voltage.warning": true,
+              "truck.brake.parking": true
+            }
+            """);
+
+        var payload = TelemetryMapper.Map(TruckTelMapper.ToFunbit(flat), ts: 1, unitsMode: "auto");
+        var dash = payload.Dashboard!;
+
+        Assert.Equal(50, dash.Speed); // 22.352 m/s = 80.47 km/h = 50 mph
+        Assert.Equal("hazard", dash.Signal);
+        Assert.Equal("low", dash.Lights);
+        Assert.True(dash.Wipers);
+        Assert.Equal(new[] { "battery", "parkingBrake" }, dash.Warnings);
+    }
+
+    [Fact]
+    public void Dashboard_UsesTheStalkNotTheFlashingLamp()
+    {
+        // The lamp flashes (aliasing against a 1s poll); only the stalk position is steady.
+        var flat = Parse("""{"game.id":"ats","truck.lblinker":true,"truck.rblinker":false,"truck.light.lblinker":false,"truck.light.rblinker":false}""");
+
+        Assert.Equal("left", TelemetryMapper.Map(TruckTelMapper.ToFunbit(flat), 1, "auto").Dashboard!.Signal);
+    }
 }

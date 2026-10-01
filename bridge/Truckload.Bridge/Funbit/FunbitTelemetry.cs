@@ -35,6 +35,25 @@ public sealed class FunbitTruck
     [JsonPropertyName("wearCabin")] public double WearCabin { get; set; }
     [JsonPropertyName("wearChassis")] public double WearChassis { get; set; }
     [JsonPropertyName("wearWheels")] public double WearWheels { get; set; }
+
+    // Instrument-cluster fields (feed the contract's "dashboard"). The TruckTel mapper fills these
+    // too, converting its SI values, so everything here is in Funbit's units.
+    [JsonPropertyName("speed")] public double Speed { get; set; } // km/h, negative when reversing
+    [JsonPropertyName("blinkerLeftActive")] public bool BlinkerLeftActive { get; set; } // stalk position, not the flashing lamp
+    [JsonPropertyName("blinkerRightActive")] public bool BlinkerRightActive { get; set; }
+    [JsonPropertyName("hazardWarning")] public bool HazardWarning { get; set; }
+    [JsonPropertyName("lightsParkingOn")] public bool LightsParkingOn { get; set; }
+    [JsonPropertyName("lightsBeamLowOn")] public bool LightsBeamLowOn { get; set; }
+    [JsonPropertyName("lightsBeamHighOn")] public bool LightsBeamHighOn { get; set; }
+    [JsonPropertyName("wipersOn")] public bool WipersOn { get; set; }
+    [JsonPropertyName("fuelWarningOn")] public bool FuelWarningOn { get; set; }
+    [JsonPropertyName("oilPressureWarningOn")] public bool OilPressureWarningOn { get; set; }
+    [JsonPropertyName("waterTemperatureWarningOn")] public bool WaterTemperatureWarningOn { get; set; }
+    [JsonPropertyName("batteryVoltageWarningOn")] public bool BatteryVoltageWarningOn { get; set; }
+    [JsonPropertyName("adblueWarningOn")] public bool AdblueWarningOn { get; set; }
+    [JsonPropertyName("airPressureWarningOn")] public bool AirPressureWarningOn { get; set; }
+    [JsonPropertyName("airPressureEmergencyOn")] public bool AirPressureEmergencyOn { get; set; }
+    [JsonPropertyName("parkBrakeOn")] public bool ParkBrakeOn { get; set; }
 }
 
 public sealed class FunbitTrailer

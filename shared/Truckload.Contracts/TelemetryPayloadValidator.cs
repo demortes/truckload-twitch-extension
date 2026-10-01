@@ -47,6 +47,9 @@ public static class TelemetryPayloadValidator
         if (payload.Events is { } events)
             ValidateEvents(events, errors);
 
+        if (payload.Dashboard is { } dashboard)
+            ValidateDashboard(dashboard, errors);
+
         return errors;
     }
 
@@ -82,6 +85,35 @@ public static class TelemetryPayloadValidator
 
         if (truck.Odometer < 0)
             errors.Add("'truck.odometer' must not be negative.");
+    }
+
+    private const int MaxSpeed = 500;
+
+    private static void ValidateDashboard(DashboardInfo dashboard, List<string> errors)
+    {
+        if (dashboard.Speed is < 0 or > MaxSpeed)
+            errors.Add($"'dashboard.speed' must be between 0 and {MaxSpeed}.");
+
+        if (!DashboardValues.Signals.Contains(dashboard.Signal))
+            errors.Add($"'dashboard.signal' must be one of: {string.Join(", ", DashboardValues.Signals)}.");
+
+        if (!DashboardValues.Lights.Contains(dashboard.Lights))
+            errors.Add($"'dashboard.lights' must be one of: {string.Join(", ", DashboardValues.Lights)}.");
+
+        if (dashboard.Warnings is null)
+        {
+            errors.Add("'dashboard.warnings' must be a list (empty when there are none).");
+            return;
+        }
+
+        if (dashboard.Warnings.Count > DashboardValues.Warnings.Length)
+            errors.Add($"'dashboard.warnings' must not contain more than {DashboardValues.Warnings.Length} entries.");
+
+        foreach (var warning in dashboard.Warnings)
+        {
+            if (!DashboardValues.Warnings.Contains(warning))
+                errors.Add($"'dashboard.warnings[]' entries must be one of: {string.Join(", ", DashboardValues.Warnings)}.");
+        }
     }
 
     private static void ValidateEvents(IReadOnlyList<TelemetryEvent> events, List<string> errors)
