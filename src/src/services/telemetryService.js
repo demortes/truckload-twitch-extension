@@ -110,7 +110,9 @@ async function fetchInitialState(backendUrl, channelId) {
   try {
     const response = await fetch(`${backendUrl}/api/telemetry/${channelId}`);
     if (response.ok) {
-      applyPayload(await response.json());
+      // The stored snapshot still carries the last tick's events; replaying a past crash toast on every
+      // page load would be wrong, so only live PubSub messages may raise events.
+      applyPayload({ ...(await response.json()), events: [] });
     }
   } catch (err) {
     console.warn('[Telemetry] Failed to fetch initial state:', err);

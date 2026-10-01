@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './EventToast.css';
 
 // Alerts like a possible crash stay up long enough to be noticed on a busy stream, then dismiss themselves.
@@ -42,21 +42,34 @@ const SEVERITY_ICON = {
 function EventToast({ events }) {
   const [toasts, setToasts] = useState([]);
   const nextId = useRef(0);
+  // Dismiss timers live outside the effect on purpose. Telemetry arrives about once a second and every
+  // payload carries a fresh `events` array, so an effect that cleared its timers on re-run (the usual
+  // pattern) would cancel each toast's timer almost immediately and the toast would never go away.
+  const timers = useRef(new Map());
+
+  const dismiss = useCallback((id) => {
+    clearTimeout(timers.current.get(id));
+    timers.current.delete(id);
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   useEffect(() => {
-    if (!Array.isArray(events) || events.length === 0) return undefined;
+    const pending = timers.current;
+    return () => {
+      pending.forEach(clearTimeout);
+      pending.clear();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!Array.isArray(events) || events.length === 0) return;
 
     const newToasts = events.map((event) => ({ id: nextId.current++, ...event }));
     setToasts((prev) => [...prev, ...newToasts]);
-
-    const timers = newToasts.map((toast) =>
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== toast.id));
-      }, TOAST_DURATION_MS)
-    );
-
-    return () => timers.forEach(clearTimeout);
-  }, [events]);
+    newToasts.forEach((toast) => {
+      timers.current.set(toast.id, setTimeout(() => dismiss(toast.id), TOAST_DURATION_MS));
+    });
+  }, [events, dismiss]);
 
   if (toasts.length === 0) return null;
 
@@ -68,6 +81,16 @@ function EventToast({ events }) {
             {SEVERITY_ICON[toast.severity] || SEVERITY_ICON.info}
           </span>
           <span className="event-toast-message">{toast.message}</span>
+          <button
+            type="button"
+            className="event-toast-close"
+            onClick={() => dismiss(toast.id)}
+            aria-label="Dismiss notification"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
         </div>
       ))}
     </div>
