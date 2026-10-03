@@ -1,4 +1,8 @@
-# Truckload
+<p align="center">
+  <img src="docs/assets/logo.png" alt="Truckload logo" width="96" height="96" />
+</p>
+
+<h1 align="center">Truckload</h1>
 
 A Twitch Extension for American Truck Simulator and Euro Truck Simulator 2
 streamers. Viewers see the streamer's current job and truck stats live,

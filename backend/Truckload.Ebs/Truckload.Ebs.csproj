@@ -25,6 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Assets\logo.png" LogicalName="Truckload.Ebs.Assets.logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../../shared/Truckload.Contracts/Truckload.Contracts.csproj" />
   </ItemGroup>
 
