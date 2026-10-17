@@ -61,6 +61,16 @@ public sealed class BridgeRunner
             ? TelemetryMapper.Map(fetch.Data!, nowUnix, _options.Units)
             : TelemetryMapper.Disconnected(nowUnix);
 
+        if (_options.Verbose && fetch.Available && fetch.Data?.Truck is { } rawTruck)
+        {
+            var rawLights = $"parking={rawTruck.LightsParkingOn} low={rawTruck.LightsBeamLowOn} high={rawTruck.LightsBeamHighOn}";
+            if (rawLights != state.LastLoggedLights)
+            {
+                _log($"[info] raw lights: {rawLights} -> dashboard.lights={payload.Dashboard?.Lights}");
+                state.LastLoggedLights = rawLights;
+            }
+        }
+
         if (!fetch.Available && state.LastLoggedUnavailable != true && fetch.Error is not null)
             _log($"[warn] {fetch.Error}");
         state.LastLoggedUnavailable = !fetch.Available;
@@ -182,6 +192,9 @@ public sealed class RunnerState
     public DateTimeOffset? BackoffUntil { get; set; }
     public TimeSpan? CurrentBackoff { get; set; }
     public bool? LastLoggedUnavailable { get; set; }
+
+    /// <summary>The last raw light flags logged in verbose mode, so only changes are logged.</summary>
+    public string? LastLoggedLights { get; set; }
 
     /// <summary>How many polls in a row have failed; see <see cref="BridgeRunner.DisconnectGraceTicks"/>.</summary>
     public int ConsecutiveUnavailable { get; set; }
