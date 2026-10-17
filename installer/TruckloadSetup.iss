@@ -54,6 +54,8 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 
 [Files]
 Source: "staging\Truckload.Bridge.exe"; DestDir: "{app}"; Flags: ignoreversion
+; The tray app is what the shortcuts start; the console exe stays for scripting and troubleshooting.
+Source: "staging\Truckload.Bridge.Tray.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; TruckTel game plugin (MIT) is copied into each selected game's plugins folder.
 Source: "staging\trucktel.dll"; DestDir: "{code:AtsPluginDir}"; Flags: ignoreversion; Components: ats
 Source: "staging\trucktel\LICENSE"; DestDir: "{code:AtsPluginDir}\trucktel"; Flags: ignoreversion; Components: ats
@@ -68,12 +70,12 @@ Source: "trucktel-app\config.yaml"; DestDir: "{code:Ets2PluginDir}\trucktel\truc
 Source: "trucktel-app\www\index.html"; DestDir: "{code:Ets2PluginDir}\trucktel\truckload\www"; Flags: ignoreversion; Components: ets2
 
 [Icons]
-Name: "{group}\Truckload Bridge"; Filename: "{app}\Truckload.Bridge.exe"; WorkingDir: "{app}"
+Name: "{group}\Truckload Bridge"; Filename: "{app}\Truckload.Bridge.Tray.exe"; WorkingDir: "{app}"
 Name: "{group}\Uninstall Truckload"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\Truckload Bridge"; Filename: "{app}\Truckload.Bridge.exe"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autodesktop}\Truckload Bridge"; Filename: "{app}\Truckload.Bridge.Tray.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\Truckload.Bridge.exe"; WorkingDir: "{app}"; Description: "Start the Truckload Bridge now"; Flags: postinstall nowait skipifsilent unchecked
+Filename: "{app}\Truckload.Bridge.Tray.exe"; WorkingDir: "{app}"; Description: "Start the Truckload Bridge now"; Flags: postinstall nowait skipifsilent
 
 [Code]
 var

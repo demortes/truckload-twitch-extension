@@ -35,6 +35,14 @@ dotnet publish (Join-Path $root 'bridge/Truckload.Bridge') -c Release -r win-x64
 if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed' }
 Copy-Item (Join-Path $publish 'Truckload.Bridge.exe') $staging
 
+Write-Host "==> Publishing Truckload.Bridge.Tray $Version"
+$trayPublish = Join-Path $staging 'tray-publish'
+dotnet publish (Join-Path $root 'bridge/Truckload.Bridge.Tray') -c Release -r win-x64 --self-contained `
+    -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=$Version `
+    -o $trayPublish
+if ($LASTEXITCODE -ne 0) { throw 'dotnet publish (tray) failed' }
+Copy-Item (Join-Path $trayPublish 'Truckload.Bridge.Tray.exe') $staging
+
 Write-Host "==> Fetching TruckTel $TruckTelVersion"
 $zip = Join-Path $staging 'trucktel.zip'
 Invoke-WebRequest -UseBasicParsing `

@@ -212,4 +212,50 @@ public class BridgeRunnerTests
         var duringBackoff = await runner.TickAsync(state, CancellationToken.None);
         Assert.Null(duringBackoff);
     }
+
+    [Fact]
+    public async Task Status_FollowsTheGameAndOnlyReportsChanges()
+    {
+        var time = new FakeTimeProvider();
+        var source = new FakeTelemetrySource { NextResult = TelemetryFetchResult.Unavailable("no game") };
+        var seen = new List<BridgeStatus>();
+        var runner = new BridgeRunner(source, sender: null, Options(), time, onStatus: seen.Add);
+        var state = new RunnerState();
+
+        for (var i = 0; i < BridgeRunner.DisconnectGraceTicks; i++)
+        {
+            await runner.TickAsync(state, CancellationToken.None);
+            time.Advance(TimeSpan.FromSeconds(1));
+        }
+        Assert.Equal([BridgeStatus.WaitingForGame], seen);
+
+        source.NextResult = TelemetryFetchResult.Ok(Connected());
+        await runner.TickAsync(state, CancellationToken.None);
+        time.Advance(TimeSpan.FromSeconds(1));
+        await runner.TickAsync(state, CancellationToken.None);
+
+        Assert.Equal([BridgeStatus.WaitingForGame, BridgeStatus.Live], seen);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.OK, BridgeStatus.Live)]
+    [InlineData(HttpStatusCode.InternalServerError, BridgeStatus.SendFailing)]
+    [InlineData(HttpStatusCode.Unauthorized, BridgeStatus.InvalidKey)]
+    public async Task Status_ReflectsTheBackendResponse(HttpStatusCode response, BridgeStatus expected)
+    {
+        var handler = new FakeHttpMessageHandler();
+        handler.Enqueue(() => new HttpResponseMessage(response)
+        {
+            Content = new StringContent("""{"stored":true,"broadcast":"sent"}"""),
+        });
+        var seen = new List<BridgeStatus>();
+        var runner = new BridgeRunner(
+            new FakeTelemetrySource { NextResult = TelemetryFetchResult.Ok(Connected()) },
+            new IngestSender(new HttpClient(handler), "https://example.test/api/ingest", "key"),
+            Options(dryRun: false), new FakeTimeProvider(), onStatus: seen.Add);
+
+        await runner.TickAsync(new RunnerState(), CancellationToken.None);
+
+        Assert.Equal(expected, Assert.Single(seen));
+    }
 }

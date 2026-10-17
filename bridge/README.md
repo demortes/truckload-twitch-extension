@@ -27,6 +27,21 @@ of them.
 - An ingest URL and API key from the extension's **Config** page on your
   Twitch channel dashboard.
 
+## Tray app (Windows)
+
+The installer sets up `Truckload.Bridge.Tray.exe`: the same bridge, running quietly
+in the notification area with a status light instead of a console window.
+
+- **Grey/amber** - starting, paused, or waiting for ATS/ETS2 to start.
+- **Green** - telemetry is flowing to the Truckload backend.
+- **Red** - the backend can't be reached, or it rejected your ingest key.
+
+On first run (no key saved yet) a window asks for your ingest key; the backend URL
+is prefilled. Right-click the dot for Pause, Settings, the log, and updates; it
+shows a notification when a new version is available. "Start with Windows" is a
+checkbox in Settings. The console `Truckload.Bridge.exe` still works as before and
+is the only build for Linux and macOS.
+
 ## Quick start
 
 On Windows, the easiest route is the `TruckloadSetup` installer from the

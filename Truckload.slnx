@@ -3,5 +3,6 @@
   <Project Path="backend/Truckload.Ebs/Truckload.Ebs.csproj" />
   <Project Path="backend/Truckload.Ebs.Tests/Truckload.Ebs.Tests.csproj" />
   <Project Path="bridge/Truckload.Bridge/Truckload.Bridge.csproj" />
+  <Project Path="bridge/Truckload.Bridge.Tray/Truckload.Bridge.Tray.csproj" />
   <Project Path="bridge/Truckload.Bridge.Tests/Truckload.Bridge.Tests.csproj" />
 </Solution>

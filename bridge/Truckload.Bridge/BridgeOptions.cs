@@ -12,6 +12,9 @@ public sealed class BridgeOptions
     /// <summary>Local telemetry server URL. When unset, the default for the resolved <see cref="Source"/> is used.</summary>
     public string? TelemetryUrl { get; set; }
 
+    /// <summary>The hosted backend; what the installer and the tray app prefill.</summary>
+    public const string DefaultIngestUrl = "https://truckload.demortes.com/api/ingest";
+
     public const string SourceTrucktel = "trucktel";
     public const string SourceFunbit = "funbit";
     public const string FunbitDefaultUrl = "http://localhost:25555/api/ets2/telemetry";
