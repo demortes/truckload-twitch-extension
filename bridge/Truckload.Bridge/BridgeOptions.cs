@@ -47,6 +47,13 @@ public sealed class BridgeOptions
     public bool Verbose { get; set; }
     public bool Help { get; set; }
 
+    /// <summary>Skip the startup check for a newer release.</summary>
+    public bool NoUpdateCheck { get; set; }
+
+    /// <summary>Download and install the latest release, then exit. Never persisted by <c>--save</c>.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool Update { get; set; }
+
     public const string ConfigFileName = "truckload-bridge.json";
 
     /// <summary>Resolves options from, in increasing priority: defaults, the config file next to the exe, environment variables, then CLI args.</summary>
@@ -128,6 +135,12 @@ public sealed class BridgeOptions
                 case "--verbose":
                     options.Verbose = true;
                     break;
+                case "--update":
+                    options.Update = true;
+                    break;
+                case "--no-update-check":
+                    options.NoUpdateCheck = true;
+                    break;
                 case "--help":
                 case "-h":
                 case "-?":
@@ -177,6 +190,8 @@ public sealed class BridgeOptions
           --dry-run              Print payloads instead of sending them; no ingest URL/key required
           --save                 Write the resolved options to truckload-bridge.json next to the exe
           --verbose              Log every payload considered, not just ones sent
+          --update               Download and install the latest release, then exit
+          --no-update-check      Don't check for a newer release on startup (never checked with --dry-run or --demo)
           --help                 Show this text
         """;
 }

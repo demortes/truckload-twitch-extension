@@ -52,6 +52,21 @@ Truckload.Bridge.exe --ingest-url https://your-backend-domain/api/ingest --key <
 Truckload.Bridge.exe
 ```
 
+### Updating
+
+On startup the bridge checks GitHub for a newer release and prints a one-line
+notice if there is one. It never installs anything on its own. To update, run:
+
+```
+Truckload.Bridge.exe --update
+```
+
+That downloads the zip for your OS from the latest release (GitHub only),
+replaces the exe, and exits; start the bridge again to use the new version. The
+previous exe is kept next to it as `*.old` until the next start. The check is
+skipped with `--dry-run`, `--demo` or `--no-update-check`, and a failed check
+(offline, rate limited) never delays startup.
+
 ### Linux
 
 ATS/ETS2 on Linux (native or via Proton) exposes the same local telemetry
