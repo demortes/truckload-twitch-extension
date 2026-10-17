@@ -3,6 +3,7 @@ using Truckload.Bridge.Demo;
 using Truckload.Bridge.Funbit;
 using Truckload.Bridge.Sending;
 using Truckload.Bridge.TruckTel;
+using Truckload.Bridge.Updates;
 
 var baseDirectory = AppContext.BaseDirectory;
 
@@ -22,6 +23,12 @@ if (options.Help)
     Console.WriteLine(BridgeOptions.HelpText);
     return 0;
 }
+
+if (Environment.ProcessPath is { } processPath)
+    SelfUpdater.CleanUpOldExe(processPath);
+
+if (options.Update)
+    return await RunUpdateAsync();
 
 if (!options.DryRun && (string.IsNullOrWhiteSpace(options.IngestUrl) || string.IsNullOrWhiteSpace(options.IngestKey)))
 {
@@ -69,6 +76,14 @@ IngestSender? sender = options.DryRun
     ? null
     : new IngestSender(httpClient, options.IngestUrl!, options.IngestKey!);
 
+// Offline or dry-run setups skip the check, and a failed check never delays or stops startup.
+if (!options.DryRun && !options.Demo && !options.NoUpdateCheck)
+{
+    var available = await new UpdateChecker(httpClient).CheckAsync(BridgeVersion.Current, UpdateChecker.CurrentRuntimeId(), cts.Token);
+    if (available is not null)
+        Console.WriteLine($"A newer version is available: v{available.Version} (you have v{BridgeVersion.Current}). Run with --update to install it, or see {available.ReleaseUrl}");
+}
+
 var runner = new BridgeRunner(source, sender, options, time, Console.WriteLine);
 
 var state = await runner.RunAsync(cts.Token);
@@ -84,4 +99,32 @@ static string Mask(string? key)
     if (string.IsNullOrEmpty(key))
         return "(none)";
     return key.Length <= 8 ? "****" : $"{key[..4]}...{key[^4..]}";
+}
+
+async Task<int> RunUpdateAsync()
+{
+    using var http = new HttpClient();
+    var runtimeId = UpdateChecker.CurrentRuntimeId();
+    Console.WriteLine($"Truckload Bridge v{BridgeVersion.Current}: checking for updates...");
+
+    var update = await new UpdateChecker(http).CheckAsync(BridgeVersion.Current, runtimeId, CancellationToken.None);
+    if (update is null)
+    {
+        Console.WriteLine("You are up to date (or the update check could not reach GitHub).");
+        return 0;
+    }
+
+    var result = await new SelfUpdater(http, Console.WriteLine).ApplyAsync(update, Environment.ProcessPath, CancellationToken.None);
+    switch (result)
+    {
+        case SelfUpdateResult.Updated:
+            Console.WriteLine($"Updated to v{update.Version}. Start the bridge again to use it.");
+            return 0;
+        case SelfUpdateResult.Unsupported:
+            Console.WriteLine($"v{update.Version} is available but can't be installed automatically here. Download it from {update.ReleaseUrl}");
+            return 0;
+        default:
+            Console.WriteLine($"Update to v{update.Version} failed. You can download it manually from {update.ReleaseUrl}");
+            return 3;
+    }
 }
