@@ -4,6 +4,7 @@ import { onAuthorized } from '../services/twitchAuth';
 import { getConfiguredPlayerIds, onConfigurationChanged } from '../services/convoyConfig';
 import { FEATURES } from '../config/features';
 import mockTelemetry from '../dev/mockTelemetry';
+import { getDevBackend } from '../dev/devBackend';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
 
@@ -14,10 +15,21 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
  */
 export function useTelemetry() {
   const [telemetry, setTelemetry] = useState(() =>
-    window.Twitch?.ext ? telemetryService.getState() : mockTelemetry
+    window.Twitch?.ext || getDevBackend() ? telemetryService.getState() : mockTelemetry
   );
 
   useEffect(() => {
+    // Dev only: ?channel=<id>&backend=<url> shows a real channel's live data in a plain browser tab.
+    const dev = getDevBackend();
+    if (dev) {
+      const unsubscribeDev = telemetryService.subscribe(setTelemetry);
+      const stopPolling = telemetryService.startDevPolling(dev.backend, dev.channel);
+      return () => {
+        unsubscribeDev();
+        stopPolling();
+      };
+    }
+
     if (!window.Twitch?.ext) {
       // Local dev without the Twitch helper (e.g. plain `npm run dev`): nothing to
       // subscribe to, keep showing mock data.

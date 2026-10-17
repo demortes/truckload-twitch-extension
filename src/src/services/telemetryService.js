@@ -163,6 +163,23 @@ export function initialize(options = {}) {
   }
 }
 
+/**
+ * Dev-only: polls the backend's latest-snapshot endpoint instead of waiting for Twitch PubSub, so a
+ * view can be tested in a plain browser against a real channel (see dev/devBackend.js). Events are
+ * not replayed (fetchInitialState strips them), only the dashboard/job/truck state.
+ * @returns {() => void} stop function
+ */
+export function startDevPolling(backendUrl, channelId, intervalMs = 2000) {
+  startStaleTracking();
+  const poll = () => fetchInitialState(backendUrl, channelId);
+  poll();
+  const timer = setInterval(poll, intervalMs);
+  return () => {
+    clearInterval(timer);
+    stopStaleTracking();
+  };
+}
+
 export function cleanup() {
   stopStaleTracking();
   stopTruckyPolling();
@@ -239,4 +256,5 @@ export default {
   connectTwitchPubSub,
   startTruckyPolling,
   stopTruckyPolling,
+  startDevPolling,
 };
