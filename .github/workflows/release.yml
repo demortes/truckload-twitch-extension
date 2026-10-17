@@ -119,6 +119,19 @@ jobs:
         with:
           name: bridge-release-asset-${{ matrix.rid }}
           path: Truckload.Bridge-${{ matrix.rid }}-v*.zip
+      - name: Publish tray app (Windows only)
+        if: matrix.rid == 'win-x64'
+        shell: bash
+        run: |
+          dotnet publish bridge/Truckload.Bridge.Tray -c Release -r win-x64 --self-contained             -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true             -p:Version=${{ steps.version.outputs.version }}             -o publish/tray
+          cd publish/tray
+          7z a ../../Truckload.Bridge.Tray-win-x64-v${{ steps.version.outputs.version }}.zip Truckload.Bridge.Tray.exe
+      - name: Upload tray app artifact
+        if: matrix.rid == 'win-x64'
+        uses: actions/upload-artifact@v7
+        with:
+          name: bridge-tray-release-asset
+          path: Truckload.Bridge.Tray-win-x64-v*.zip
 
   installer:
     name: Build Windows installer

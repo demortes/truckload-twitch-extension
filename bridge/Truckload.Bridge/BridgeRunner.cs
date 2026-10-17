@@ -17,6 +17,7 @@ public sealed class BridgeRunner
     private readonly BridgeOptions _options;
     private readonly TimeProvider _time;
     private readonly Action<string> _log;
+    private readonly Action<BridgeStatus>? _onStatus;
 
     /// <summary>
     /// Consecutive failed polls tolerated before the bridge tells viewers the game is disconnected.
@@ -29,8 +30,9 @@ public sealed class BridgeRunner
     private static readonly TimeSpan InitialBackoff = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan MaxBackoff = TimeSpan.FromSeconds(60);
 
-    public BridgeRunner(ITelemetrySource source, IngestSender? sender, BridgeOptions options, TimeProvider time, Action<string>? log = null)
+    public BridgeRunner(ITelemetrySource source, IngestSender? sender, BridgeOptions options, TimeProvider time, Action<string>? log = null, Action<BridgeStatus>? onStatus = null)
     {
+        _onStatus = onStatus;
         _source = source;
         _sender = sender;
         _options = options;
@@ -56,6 +58,9 @@ public sealed class BridgeRunner
                 _log($"[info] telemetry source unavailable ({state.ConsecutiveUnavailable}/{DisconnectGraceTicks}), waiting before reporting disconnected");
             return null;
         }
+
+        if (!fetch.Available)
+            Report(state, BridgeStatus.WaitingForGame);
 
         var payload = fetch.Available
             ? TelemetryMapper.Map(fetch.Data!, nowUnix, _options.Units)
@@ -101,6 +106,7 @@ public sealed class BridgeRunner
 
         if (_options.DryRun || _sender is null)
         {
+            Report(state, fetch.Available ? BridgeStatus.Live : BridgeStatus.WaitingForGame);
             state.LastSent = payload;
             state.LastSentAt = now;
             return payload;
@@ -111,6 +117,7 @@ public sealed class BridgeRunner
         {
             case SendOutcome.Sent:
             case SendOutcome.Throttled:
+                Report(state, fetch.Available ? BridgeStatus.Live : BridgeStatus.WaitingForGame);
                 state.LastSent = payload;
                 state.LastSentAt = now;
                 state.BackoffUntil = null;
@@ -118,6 +125,7 @@ public sealed class BridgeRunner
                 break;
 
             case SendOutcome.RateLimited:
+                Report(state, fetch.Available ? BridgeStatus.Live : BridgeStatus.WaitingForGame);
                 state.LastSent = payload;
                 state.LastSentAt = now;
                 state.BackoffUntil = now.Add(result.RetryAfter ?? TimeSpan.FromSeconds(5));
@@ -125,11 +133,13 @@ public sealed class BridgeRunner
 
             case SendOutcome.InvalidKey:
                 state.ExitRequested = BridgeExitReason.InvalidKey;
+                Report(state, BridgeStatus.InvalidKey);
                 _log("[error] The backend rejected the ingest key. Regenerate it on the extension's Config page.");
                 break;
 
             case SendOutcome.Failed:
             case SendOutcome.NetworkError:
+                Report(state, BridgeStatus.SendFailing);
                 state.CurrentBackoff = state.CurrentBackoff is { } current
                     ? TimeSpan.FromSeconds(Math.Min(current.TotalSeconds * 2, MaxBackoff.TotalSeconds))
                     : InitialBackoff;
@@ -139,6 +149,15 @@ public sealed class BridgeRunner
         }
 
         return payload;
+    }
+
+    // Raised only when the status actually changes, so a UI is not woken every poll.
+    private void Report(RunnerState state, BridgeStatus status)
+    {
+        if (state.Status == status)
+            return;
+        state.Status = status;
+        _onStatus?.Invoke(status);
     }
 
     public async Task<RunnerState> RunAsync(CancellationToken cancellationToken)
@@ -192,6 +211,9 @@ public sealed class RunnerState
     public DateTimeOffset? BackoffUntil { get; set; }
     public TimeSpan? CurrentBackoff { get; set; }
     public bool? LastLoggedUnavailable { get; set; }
+
+    /// <summary>The last status reported to the UI; <see cref="BridgeStatus.Starting"/> until the first tick decides.</summary>
+    public BridgeStatus Status { get; set; } = BridgeStatus.Starting;
 
     /// <summary>The last raw light flags logged in verbose mode, so only changes are logged.</summary>
     public string? LastLoggedLights { get; set; }

@@ -36,7 +36,7 @@ public sealed class UpdateChecker
         return null;
     }
 
-    public async Task<UpdateInfo?> CheckAsync(string currentVersion, string? runtimeId, CancellationToken cancellationToken)
+    public async Task<UpdateInfo?> CheckAsync(string currentVersion, string? runtimeId, CancellationToken cancellationToken, string assetPrefix = "Truckload.Bridge")
     {
         // Dev builds ("dev", or anything that is not a release version) have nothing to compare against.
         if (!TryParseVersion(currentVersion, out _))
@@ -72,7 +72,7 @@ public sealed class UpdateChecker
                 return null;
 
             var releaseUrl = root.TryGetProperty("html_url", out var html) ? html.GetString() ?? "" : "";
-            var expectedAsset = runtimeId is null ? null : $"Truckload.Bridge-{runtimeId}-v{version}.zip";
+            var expectedAsset = runtimeId is null ? null : $"{assetPrefix}-{runtimeId}-v{version}.zip";
 
             string? assetName = null, assetUrl = null;
             if (expectedAsset is not null && root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)

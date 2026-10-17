@@ -1,8 +1,5 @@
 using Truckload.Bridge;
-using Truckload.Bridge.Demo;
-using Truckload.Bridge.Funbit;
 using Truckload.Bridge.Sending;
-using Truckload.Bridge.TruckTel;
 using Truckload.Bridge.Updates;
 
 var baseDirectory = AppContext.BaseDirectory;
@@ -59,18 +56,9 @@ Console.CancelKeyPress += (_, e) =>
 var time = TimeProvider.System;
 using var httpClient = new HttpClient();
 
-// The local telemetry servers (TruckTel in particular) close idle keep-alive connections, which makes a
-// pooled client fail on every few requests. Loopback connections are cheap, so never reuse them.
-using var telemetryHttpClient = new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.Zero });
+using var telemetryHttpClient = TelemetrySourceFactory.CreateTelemetryHttpClient();
 
-ITelemetrySource source = options.Demo
-    ? new DemoSource(time, options.DemoGame)
-    : options.ResolvedSource switch
-    {
-        BridgeOptions.SourceFunbit => new FunbitSource(telemetryHttpClient, options.ResolvedTelemetryUrl),
-        BridgeOptions.SourceTrucktel => new TruckTelSource(telemetryHttpClient, options.ResolvedTelemetryUrl),
-        var other => throw new ArgumentException($"Unknown --source '{other}'. Use 'trucktel' or 'funbit'."),
-    };
+ITelemetrySource source = TelemetrySourceFactory.Create(options, telemetryHttpClient, time);
 
 IngestSender? sender = options.DryRun
     ? null
