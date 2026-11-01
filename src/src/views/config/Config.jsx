@@ -3,6 +3,7 @@ import { FEATURES } from '../../config/features';
 import {
   getConfiguredPlayerIds,
   getShowWhenOffline,
+  isConfigLoaded,
   onConfigChanged,
   onConfigurationChanged,
   savePlayerIds,
@@ -87,6 +88,8 @@ function Config() {
   );
   const [convoySaved, setConvoySaved] = useState(false);
   const [showWhenOffline, setShowWhenOffline] = useState(() => (window.Twitch?.ext ? getShowWhenOffline() : false));
+  // Saving before Twitch delivers the stored settings would overwrite them, so saves wait for this.
+  const [configReady, setConfigReady] = useState(() => isConfigLoaded());
 
   const now = useNow(5000); // refreshed periodically so "last data received Ns ago" stays fresh
 
@@ -126,7 +129,14 @@ function Config() {
     return undefined;
   }, []);
 
-  useEffect(() => onConfigChanged((config) => setShowWhenOffline(config.showWhenOffline)), []);
+  useEffect(
+    () =>
+      onConfigChanged((config) => {
+        setShowWhenOffline(config.showWhenOffline);
+        setConfigReady(true);
+      }),
+    []
+  );
 
   useEffect(() => {
     if (!twitchAuth) return undefined;
@@ -175,7 +185,7 @@ function Config() {
   };
 
   const saveConvoyPlayerIds = () => {
-    savePlayerIds(parsePlayerIdsInput(convoyInput));
+    if (!savePlayerIds(parsePlayerIdsInput(convoyInput))) return;
     setConvoySaved(true);
     setTimeout(() => setConvoySaved(false), 2000);
   };
@@ -323,7 +333,7 @@ function Config() {
                   onChange={(e) => setConvoyInput(e.target.value)}
                 />
                 <div className="config-copy-row">
-                  <button className="config-button" onClick={saveConvoyPlayerIds}>
+                  <button className="config-button" onClick={saveConvoyPlayerIds} disabled={!configReady}>
                     {convoySaved ? 'Saved!' : 'Save'}
                   </button>
                 </div>
@@ -341,9 +351,10 @@ function Config() {
                 <input
                   type="checkbox"
                   checked={showWhenOffline}
+                  disabled={!configReady}
                   onChange={(e) => {
+                    if (!saveShowWhenOffline(e.target.checked)) return;
                     setShowWhenOffline(e.target.checked);
-                    saveShowWhenOffline(e.target.checked);
                   }}
                 />
                 Keep the overlay on screen even when I am not playing

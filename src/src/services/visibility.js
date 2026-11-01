@@ -4,11 +4,12 @@
 /** How long the overlay stays up after the last live telemetry before it hides itself. */
 export const OFFLINE_GRACE_MS = 120_000;
 
-const TRUCK_GAME_PATTERN = /american truck simulator|euro truck simulator/i;
+// Exactly the two Twitch category names ("Euro Truck Simulator" without the 2 is not one of them).
+const TRUCK_GAMES = new Set(['american truck simulator', 'euro truck simulator 2']);
 
 /** True when a Twitch category name is ATS or ETS2. */
 export function isTruckGame(game) {
-  return typeof game === 'string' && TRUCK_GAME_PATTERN.test(game);
+  return typeof game === 'string' && TRUCK_GAMES.has(game.trim().toLowerCase());
 }
 
 /**

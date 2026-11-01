@@ -52,23 +52,40 @@ export function getShowWhenOffline() {
   return readConfig().showWhenOffline;
 }
 
-/** Merges `changes` into the saved config and writes it. Only callable from the config view. */
+// True once Twitch has delivered the saved broadcaster segment (its first onChanged). Until then
+// readConfig() only sees defaults, so merging a save into it would erase whatever is already stored.
+let configLoaded = false;
+
+/** Whether saved settings can be written without overwriting ones that have not loaded yet. */
+export function isConfigLoaded() {
+  return configLoaded;
+}
+
+/**
+ * Merges `changes` into the saved config and writes it. Only callable from the config view.
+ * @returns {boolean} false when nothing was written (no Twitch, or the saved config has not loaded)
+ */
 function writeConfig(changes) {
   if (!window.Twitch?.ext?.configuration) {
     console.warn('[Config] Twitch configuration service unavailable; cannot save.');
-    return;
+    return false;
+  }
+  if (!configLoaded) {
+    console.warn('[Config] Saved configuration has not loaded yet; not saving to avoid overwriting it.');
+    return false;
   }
   window.Twitch.ext.configuration.set('broadcaster', CONFIG_VERSION, JSON.stringify({ ...readConfig(), ...changes }));
+  return true;
 }
 
 /** Saves the broadcaster's player ID list. Only callable from the config view. */
 export function savePlayerIds(playerIds) {
-  writeConfig({ playerIds });
+  return writeConfig({ playerIds });
 }
 
 /** Saves the "keep the overlay visible when not playing" choice. Only callable from the config view. */
 export function saveShowWhenOffline(showWhenOffline) {
-  writeConfig({ showWhenOffline: !!showWhenOffline });
+  return writeConfig({ showWhenOffline: !!showWhenOffline });
 }
 
 // Twitch keeps a single onChanged callback (like onAuthorized), so every subscriber goes through one
@@ -79,6 +96,7 @@ let configRegistered = false;
 /**
  * Calls `callback(config)` with the latest { playerIds, showWhenOffline } whenever the broadcaster
  * segment changes (including the initial load, per the Twitch Configuration Service behavior).
+ * Nothing is delivered, and {@link isConfigLoaded} stays false, until that first load.
  * Returns an unsubscribe function; a no-op outside a Twitch extension context.
  */
 export function onConfigChanged(callback) {
@@ -88,10 +106,11 @@ export function onConfigChanged(callback) {
   if (!configRegistered) {
     configRegistered = true;
     window.Twitch.ext.configuration.onChanged(() => {
+      configLoaded = true;
       const config = readConfig();
       [...configSubscribers].forEach((subscriber) => subscriber(config));
     });
-  } else {
+  } else if (configLoaded) {
     callback(readConfig());
   }
 
@@ -110,6 +129,7 @@ export default {
   parsePlayerIds,
   getConfiguredPlayerIds,
   getShowWhenOffline,
+  isConfigLoaded,
   savePlayerIds,
   saveShowWhenOffline,
   onConfigChanged,

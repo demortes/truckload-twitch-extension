@@ -8,6 +8,9 @@ const base = { connected: false, stale: false, lastLiveAt: null, now: NOW, game:
 test('recognises ATS and ETS2 categories', () => {
   assert.equal(isTruckGame('American Truck Simulator'), true);
   assert.equal(isTruckGame('Euro Truck Simulator 2'), true);
+  assert.equal(isTruckGame('  euro truck simulator 2 '), true);
+  assert.equal(isTruckGame('Euro Truck Simulator'), false);
+  assert.equal(isTruckGame('American Truck Simulator 2'), false);
   assert.equal(isTruckGame('Just Chatting'), false);
   assert.equal(isTruckGame(''), false);
   assert.equal(isTruckGame(undefined), false);
