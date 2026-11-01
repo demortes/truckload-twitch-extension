@@ -29,6 +29,9 @@ let state = {
   convoy: null,
   gameTime: null,
   lastTs: null,
+  // Epoch ms of the newest payload that said the game was running; null until one arrives. Lets views
+  // tell "crashed a minute ago" from "has not played in hours" (see services/visibility.js).
+  lastLiveAt: null,
   events: [],
 };
 
@@ -70,16 +73,21 @@ function applyPayload(payload) {
     return;
   }
 
+  const ts = payload.ts ?? Math.floor(Date.now() / 1000);
+
   updateState({
     connected: !!payload.connected,
-    stale: false,
+    // Judged on arrival, not only by the 5s timer: the stored snapshot a page load fetches can be hours
+    // old and still say connected, which must not flash as live.
+    stale: Date.now() - ts * 1000 > STALE_AFTER_MS,
+    lastLiveAt: payload.connected ? ts * 1000 : state.lastLiveAt,
     game: payload.game ?? null,
     units: payload.units === 'metric' ? 'metric' : 'imperial',
     job: payload.job ?? null,
     truck: payload.truck ?? null,
     // Optional: absent when the bridge is older than the dashboard feature (see docs/telemetry-contract.md).
     dashboard: payload.dashboard ?? null,
-    lastTs: payload.ts ?? Math.floor(Date.now() / 1000),
+    lastTs: ts,
     // Transient, one-off alerts (see docs/telemetry-contract.md#events). Present only on the
     // tick where the bridge detected something noteworthy; every other tick resets this to an
     // empty array, which is what tells EventToast a batch is "new" rather than lingering state.

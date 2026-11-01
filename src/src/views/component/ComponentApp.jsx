@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTelemetry } from '../../hooks/useTelemetry';
+import { useOverlayVisibility } from '../../hooks/useOverlayVisibility';
 import Dashboard from '../../components/Dashboard';
 import './component.css';
 
@@ -11,9 +12,13 @@ function formatTime(minutes) {
 }
 
 function ComponentApp() {
-  const { job, truck, dashboard, units, connected, stale } = useTelemetry();
+  const { job, truck, dashboard, units, connected, stale, lastLiveAt } = useTelemetry();
   const [expanded, setExpanded] = useState(false);
   const offline = !connected || stale;
+  const visible = useOverlayVisibility({ connected, stale, lastLiveAt });
+
+  // Nothing over the stream while they are not playing.
+  if (!visible) return null;
 
   return (
     <div className={`component-view ${expanded ? 'expanded' : ''}`}>

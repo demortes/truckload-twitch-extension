@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
 import { FEATURES } from '../../config/features';
-import { getConfiguredPlayerIds, onConfigurationChanged, savePlayerIds } from '../../services/convoyConfig';
+import {
+  getConfiguredPlayerIds,
+  getShowWhenOffline,
+  onConfigChanged,
+  onConfigurationChanged,
+  savePlayerIds,
+  saveShowWhenOffline,
+} from '../../services/convoyConfig';
 import logo from '../../assets/logo.png';
 import '../../index.css';
 import './config.css';
@@ -79,6 +86,7 @@ function Config() {
     FEATURES.convoy && window.Twitch?.ext ? getConfiguredPlayerIds().join('\n') : ''
   );
   const [convoySaved, setConvoySaved] = useState(false);
+  const [showWhenOffline, setShowWhenOffline] = useState(() => (window.Twitch?.ext ? getShowWhenOffline() : false));
 
   const now = useNow(5000); // refreshed periodically so "last data received Ns ago" stays fresh
 
@@ -117,6 +125,8 @@ function Config() {
 
     return undefined;
   }, []);
+
+  useEffect(() => onConfigChanged((config) => setShowWhenOffline(config.showWhenOffline)), []);
 
   useEffect(() => {
     if (!twitchAuth) return undefined;
@@ -319,6 +329,26 @@ function Config() {
                 </div>
               </div>
             )}
+
+            <div className="config-section">
+              <h2>When you are not playing</h2>
+              <p className="config-muted">
+                The overlay and video component hide themselves about two minutes after your game stops
+                sending data, and whenever Twitch reports a stream category that is not American Truck
+                Simulator or Euro Truck Simulator 2. Panels are unaffected.
+              </p>
+              <label className="config-checkbox">
+                <input
+                  type="checkbox"
+                  checked={showWhenOffline}
+                  onChange={(e) => {
+                    setShowWhenOffline(e.target.checked);
+                    saveShowWhenOffline(e.target.checked);
+                  }}
+                />
+                Keep the overlay on screen even when I am not playing
+              </label>
+            </div>
 
             <div className="config-section">
               <h2>Status</h2>

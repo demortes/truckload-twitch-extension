@@ -5,11 +5,16 @@ import StatusBadge from '../../components/StatusBadge';
 import Dashboard from '../../components/Dashboard';
 import EventToast from '../../components/EventToast';
 import { useTelemetry } from '../../hooks/useTelemetry';
+import { useOverlayVisibility } from '../../hooks/useOverlayVisibility';
 import { FEATURES } from '../../config/features';
 import './overlay.css';
 
 function OverlayApp() {
-  const { job, truck, dashboard, convoy, units, connected, stale, events } = useTelemetry();
+  const { job, truck, dashboard, convoy, units, connected, stale, lastLiveAt, events } = useTelemetry();
+  const visible = useOverlayVisibility({ connected, stale, lastLiveAt });
+
+  // Nothing over the stream while they are not playing.
+  if (!visible) return null;
 
   return (
     <div className="overlay">
