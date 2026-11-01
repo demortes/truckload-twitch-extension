@@ -190,3 +190,10 @@
 .config-status-dot.offline {
   background: var(--accent-red);
 }
+
+.config-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+}

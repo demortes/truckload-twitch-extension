@@ -12,6 +12,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "test": "node --test \"src/**/*.test.js\"",
     "preview": "vite preview",
     "zip": "cd dist && rm -f ../truckload-extension.zip && zip -r ../truckload-extension.zip ."
   },

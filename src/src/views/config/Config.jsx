@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { FEATURES } from '../../config/features';
-import { getConfiguredPlayerIds, onConfigurationChanged, savePlayerIds } from '../../services/convoyConfig';
+import {
+  getConfiguredPlayerIds,
+  getShowWhenOffline,
+  isConfigLoaded,
+  onConfigChanged,
+  onConfigurationChanged,
+  savePlayerIds,
+  saveShowWhenOffline,
+} from '../../services/convoyConfig';
 import logo from '../../assets/logo.png';
 import '../../index.css';
 import './config.css';
@@ -79,6 +87,9 @@ function Config() {
     FEATURES.convoy && window.Twitch?.ext ? getConfiguredPlayerIds().join('\n') : ''
   );
   const [convoySaved, setConvoySaved] = useState(false);
+  const [showWhenOffline, setShowWhenOffline] = useState(() => (window.Twitch?.ext ? getShowWhenOffline() : false));
+  // Saving before Twitch delivers the stored settings would overwrite them, so saves wait for this.
+  const [configReady, setConfigReady] = useState(() => isConfigLoaded());
 
   const now = useNow(5000); // refreshed periodically so "last data received Ns ago" stays fresh
 
@@ -117,6 +128,15 @@ function Config() {
 
     return undefined;
   }, []);
+
+  useEffect(
+    () =>
+      onConfigChanged((config) => {
+        setShowWhenOffline(config.showWhenOffline);
+        setConfigReady(true);
+      }),
+    []
+  );
 
   useEffect(() => {
     if (!twitchAuth) return undefined;
@@ -165,7 +185,7 @@ function Config() {
   };
 
   const saveConvoyPlayerIds = () => {
-    savePlayerIds(parsePlayerIdsInput(convoyInput));
+    if (!savePlayerIds(parsePlayerIdsInput(convoyInput))) return;
     setConvoySaved(true);
     setTimeout(() => setConvoySaved(false), 2000);
   };
@@ -313,12 +333,33 @@ function Config() {
                   onChange={(e) => setConvoyInput(e.target.value)}
                 />
                 <div className="config-copy-row">
-                  <button className="config-button" onClick={saveConvoyPlayerIds}>
+                  <button className="config-button" onClick={saveConvoyPlayerIds} disabled={!configReady}>
                     {convoySaved ? 'Saved!' : 'Save'}
                   </button>
                 </div>
               </div>
             )}
+
+            <div className="config-section">
+              <h2>When you are not playing</h2>
+              <p className="config-muted">
+                The overlay and video component hide themselves about two minutes after your game stops
+                sending data, and whenever Twitch reports a stream category that is not American Truck
+                Simulator or Euro Truck Simulator 2. Panels are unaffected.
+              </p>
+              <label className="config-checkbox">
+                <input
+                  type="checkbox"
+                  checked={showWhenOffline}
+                  disabled={!configReady}
+                  onChange={(e) => {
+                    if (!saveShowWhenOffline(e.target.checked)) return;
+                    setShowWhenOffline(e.target.checked);
+                  }}
+                />
+                Keep the overlay on screen even when I am not playing
+              </label>
+            </div>
 
             <div className="config-section">
               <h2>Status</h2>
