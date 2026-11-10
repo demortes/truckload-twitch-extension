@@ -12,7 +12,7 @@ COPY shared/Truckload.Contracts/ shared/Truckload.Contracts/
 COPY backend/Truckload.Ebs/ backend/Truckload.Ebs/
 RUN dotnet publish backend/Truckload.Ebs/Truckload.Ebs.csproj -c Release -o /app -p:Version=${VERSION}
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS runtime
 ARG TARGETARCH
 
 # Build metadata, supplied by CI (docker/metadata-action + build-args); defaults keep local builds working.
