@@ -9,6 +9,7 @@
     "deploy": "npm run sync:static && wrangler deploy",
     "sync:static": "node scripts/sync-static.mjs",
     "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/smoke.mjs",
     "test": "vitest run",
     "db:migrate:local": "wrangler d1 migrations apply truckload --local",
     "db:migrate:remote": "wrangler d1 migrations apply truckload --remote"

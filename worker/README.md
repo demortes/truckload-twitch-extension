@@ -62,6 +62,8 @@ The repository is public, so nothing account-specific is committed: the D1 id li
 
 ## Deploy
 
+**Step-by-step deploy and test instructions: [TESTING.md](TESTING.md).**
+
 CI (`.github/workflows/worker.yml`) typechecks, tests and dry-run bundles on every pull request, and on
 `main` applies D1 migrations and deploys, if the three repository secrets (`CLOUDFLARE_API_TOKEN`,
 `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_DATABASE_ID`) are set. Without them the deploy job skips itself.
