@@ -32,6 +32,13 @@ updates:
       frontend:
         update-types: ["minor", "patch"]
 
+  - package-ecosystem: npm
+    directory: "/worker"
+    schedule:
+      interval: weekly
+    groups:
+      worker:
+        update-types: ["minor", "patch"]
   - package-ecosystem: docker
     directory: "/backend/Truckload.Ebs"
     schedule:
