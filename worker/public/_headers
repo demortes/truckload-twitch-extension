@@ -1,0 +1,7 @@
+# Same policy the .NET landing page sent, plus script-src for landing.js (same-origin only).
+/
+  Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'
+/index.html
+  Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'
+/logo.png
+  Cache-Control: public, max-age=86400

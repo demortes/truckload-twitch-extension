@@ -1,0 +1,36 @@
+// Template for worker/wrangler.jsonc. Copy it and fill in your own values:
+//
+//   cp wrangler.example.jsonc wrangler.jsonc
+//
+// wrangler.jsonc is gitignored on purpose: it holds the ID of YOUR D1 database, which belongs to your
+// Cloudflare account and should not be committed or shared. See README.md for the full setup.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "truckload",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  // Static pages (landing page, docs site, logo). Everything the Worker answers itself is listed in
+  // run_worker_first so the static layer never shadows an API route.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    // Run `npx wrangler d1 create truckload`, then paste the database_id it prints.
+    { "binding": "DB", "database_name": "truckload", "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID", "migrations_dir": "migrations" }
+  ],
+  // Per ingest key, and per broadcaster for key management. The period must be 10 or 60 seconds.
+  // The namespace ids are just distinct numbers you choose; they are not account identifiers.
+  "ratelimits": [
+    { "name": "INGEST_LIMITER", "namespace_id": "1001", "simple": { "limit": 50, "period": 10 } },
+    { "name": "KEYS_LIMITER", "namespace_id": "1002", "simple": { "limit": 20, "period": 10 } }
+  ],
+  "observability": { "enabled": true }
+  // Secrets (set with `wrangler secret put <NAME>`, or put in .dev.vars for local runs):
+  //   TWITCH_CLIENT_ID         the extension client id
+  //   TWITCH_EXTENSION_SECRET  the extension Base64 secret (signs and verifies JWTs)
+  // Optional variables:
+  //   BROADCAST_ENABLED          "false" stores telemetry but never relays it over Twitch PubSub
+  //   MIN_BROADCAST_INTERVAL_MS  minimum gap between broadcasts to one channel (default 1000)
+}

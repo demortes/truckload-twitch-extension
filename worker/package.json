@@ -1,0 +1,27 @@
+{
+  "name": "truckload-worker",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Truckload backend (EBS) as a Cloudflare Worker with D1 and static assets",
+  "scripts": {
+    "dev": "npm run sync:static && wrangler dev",
+    "deploy": "npm run sync:static && wrangler deploy",
+    "sync:static": "node scripts/sync-static.mjs",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/smoke.mjs",
+    "test": "vitest run",
+    "db:migrate:local": "wrangler d1 migrations apply truckload --local",
+    "db:migrate:remote": "wrangler d1 migrations apply truckload --remote"
+  },
+  "dependencies": {
+    "hono": "^4.13.17"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261110.1",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0",
+    "wrangler": "^4.159.0"
+  }
+}
