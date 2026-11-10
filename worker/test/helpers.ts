@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { vi } from "vitest";
@@ -31,7 +31,9 @@ class FakeStatement {
 export function createDb() {
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec("PRAGMA foreign_keys = ON");
-  sqlite.exec(readFileSync(join(import.meta.dirname, "../migrations/0001_init.sql"), "utf8"));
+  const migrations = join(import.meta.dirname, "../migrations");
+  for (const file of readdirSync(migrations).filter((name) => name.endsWith(".sql")).sort())
+    sqlite.exec(readFileSync(join(migrations, file), "utf8"));
 
   const d1 = {
     prepare: (sql: string) => new FakeStatement(sqlite, sql),

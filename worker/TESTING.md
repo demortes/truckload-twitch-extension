@@ -107,6 +107,8 @@ npm run deploy
 prints the Worker's address, like `https://truckload.<your-subdomain>.workers.dev`. If this is your first
 Worker on the account, wrangler may ask you to register a `workers.dev` subdomain; accept.
 
+If you already applied the schema before pulling the latest commit, run `npm run db:migrate:remote` (and `npm run db:migrate:local` locally) again: it applies the new `0002_broadcast_token.sql` and skips what is already there.
+
 Right after the first deploy, `/api/health` and the static pages already work, but anything that verifies a
 Twitch token needs the secrets from the next step.
 

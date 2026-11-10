@@ -76,9 +76,9 @@ export interface UpsertResult {
  * and the incoming one is not), and decides whether this ingest may broadcast. The bridge only sends
  * whole-state snapshots, so a completed job is detected here by comparing against what is stored.
  *
- * The snapshot upsert also claims the per-channel broadcast slot: last_broadcast_at moves to `nowMs`
- * only when the minimum interval has elapsed and no suppression is active, and the returned value
- * says which happened. One statement, no extra write, and correct across concurrent isolates.
+ * The snapshot upsert also claims the per-channel broadcast slot: the row takes this ingest's random token
+ * (and last_broadcast_at moves to `nowMs`) only when the minimum interval has elapsed and no suppression is
+ * active, and the returned token says which happened. One statement, no extra write, and correct across concurrent isolates.
  */
 export async function upsertTelemetry(
   db: D1Database,
@@ -89,6 +89,8 @@ export async function upsertTelemetry(
   minBroadcastIntervalMs: number,
 ): Promise<UpsertResult> {
   const nowIso = new Date(nowMs).toISOString();
+  // This ingest owns the broadcast slot only if the row ends up holding this token.
+  const claimToken = crypto.randomUUID();
 
   const previous = await db.prepare("SELECT payload_json FROM telemetry_snapshots WHERE channel_id = ?1").bind(channelId).first<{ payload_json: string }>();
   const previousJob = previous ? tryGetJob(previous.payload_json) : null;
@@ -115,22 +117,25 @@ export async function upsertTelemetry(
   statements.push(
     db
       .prepare(
-        `INSERT INTO telemetry_snapshots (channel_id, payload_json, updated_at, last_broadcast_at)
-         VALUES (?1, ?2, ?3, ?4)
+        `INSERT INTO telemetry_snapshots (channel_id, payload_json, updated_at, last_broadcast_at, last_broadcast_token)
+         VALUES (?1, ?2, ?3, ?4, ?6)
          ON CONFLICT (channel_id) DO UPDATE SET
            payload_json = excluded.payload_json,
            updated_at = excluded.updated_at,
            last_broadcast_at = CASE
              WHEN ?4 - telemetry_snapshots.last_broadcast_at >= ?5 AND ?4 >= telemetry_snapshots.broadcast_suppressed_until
-             THEN ?4 ELSE telemetry_snapshots.last_broadcast_at END
-         RETURNING last_broadcast_at`,
+             THEN ?4 ELSE telemetry_snapshots.last_broadcast_at END,
+           last_broadcast_token = CASE
+             WHEN ?4 - telemetry_snapshots.last_broadcast_at >= ?5 AND ?4 >= telemetry_snapshots.broadcast_suppressed_until
+             THEN ?6 ELSE telemetry_snapshots.last_broadcast_token END
+         RETURNING last_broadcast_token`,
       )
-      .bind(channelId, canonicalJson, nowIso, nowMs, minBroadcastIntervalMs),
+      .bind(channelId, canonicalJson, nowIso, nowMs, minBroadcastIntervalMs, claimToken),
   );
 
-  const results = await db.batch<{ last_broadcast_at: number }>(statements);
+  const results = await db.batch<{ last_broadcast_token: string | null }>(statements);
   const upsert = results[results.length - 1];
-  return { broadcastAcquired: upsert?.results[0]?.last_broadcast_at === nowMs };
+  return { broadcastAcquired: upsert?.results[0]?.last_broadcast_token === claimToken };
 }
 
 /** After Twitch rate limits a channel, leave it alone until `untilMs`. */
