@@ -1,3 +1,2 @@
 // Shows this deployment's own ingest URL in the setup steps (the page itself is static).
-const el = document.getElementById("ingest-url");
-if (el) el.textContent = `${location.origin}/api/ingest`;
+for (const el of document.querySelectorAll(".ingest-url")) el.textContent = `${location.origin}/api/ingest`;

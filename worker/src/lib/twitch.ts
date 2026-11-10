@@ -7,6 +7,10 @@ import type { Env } from "../env";
 const encoder = new TextEncoder();
 const PUBSUB_URL = "https://api.twitch.tv/helix/extensions/pubsub";
 
+// The ingest response waits for the broadcast, and the snapshot is already stored by then, so a slow or
+// silent Twitch must not hold every bridge request open. A timeout surfaces as the usual "failed" outcome.
+const PUBSUB_TIMEOUT_MS = 5000;
+
 // System.IdentityModel validates lifetimes with a 5 minute clock skew by default; keep that.
 const CLOCK_SKEW_SECONDS = 300;
 
@@ -100,6 +104,7 @@ export async function broadcast(env: Env, channelId: string, messageJson: string
 
     const response = await fetch(PUBSUB_URL, {
       method: "POST",
+      signal: AbortSignal.timeout(PUBSUB_TIMEOUT_MS),
       headers: {
         "Client-Id": env.TWITCH_CLIENT_ID,
         Authorization: `Bearer ${jwt}`,

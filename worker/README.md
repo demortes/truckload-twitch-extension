@@ -24,7 +24,7 @@ GET  /about/                        the docs/ marketing page (static, copied fro
 | `src/lib/contract.ts` | The v1 contract: parsing, validation, canonical JSON (port of `Truckload.Contracts`) |
 | `src/lib/twitch.ts` | Extension JWTs (HS256 via WebCrypto) and the PubSub broadcast |
 | `src/lib/store.ts` | D1 queries: channels, snapshot upsert (with the broadcast throttle), job history |
-| `migrations/0001_init.sql` | The EF model as SQL |
+| `migrations/*.sql` | D1 schema: `0001_init.sql` is the EF model as SQL; `0002_broadcast_token.sql` adds the broadcast slot token |
 | `public/` | Static assets. `about/`, `logo.png` and `favicon.ico` are generated from `../docs` and gitignored |
 | `test/` | vitest. D1 is real SQLite (`node:sqlite`) behind a small adapter, so the SQL and migration are exercised |
 

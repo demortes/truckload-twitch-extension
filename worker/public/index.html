@@ -27,8 +27,9 @@
     <li><strong>Install the extension.</strong> Add it to your channel and activate the Panel and/or Video Overlay.<br>
         <a class="btn" href="https://dashboard.twitch.tv/extensions/4xg4ruobtcst87wrh63xur9wkcq8ah-0.0.1">Get the Twitch extension</a></li>
     <li><strong>Generate your ingest key.</strong> Open the extension's <em>Config</em> page from your Creator Dashboard and click <em>Generate API Key</em>. Keep the key secret.</li>
-    <li><strong>Run the Bridge on your PC.</strong> <a href="https://github.com/demortes/truckload-twitch-extension/releases/latest">Download the Truckload Bridge</a> (the installer sets up the tray app for you on Windows 10/11), or run the console bridge:
-        <pre>Truckload.Bridge.exe --ingest-url <span id="ingest-url">https://your-domain/api/ingest</span> --key &lt;your-key&gt; --save</pre></li>
+    <li><strong>Run the Bridge on your PC.</strong> <a href="https://github.com/demortes/truckload-twitch-extension/releases/latest">Download the Truckload Bridge</a> (the installer sets up the tray app for you on Windows 10/11; if it asks for a backend URL, use <code class="ingest-url">https://your-domain/api/ingest</code>), or run the console bridge:
+        <pre>Truckload.Bridge.exe --ingest-url <span class="ingest-url">https://your-domain/api/ingest</span> --key &lt;your-key&gt; --save</pre>
+        <small>A key only works with the backend that issued it. The extension&#39;s Config page shows the matching command, so if it names a different address than this page, use the one from the Config page.</small></li>
   </ol>
   <p>Start ATS or ETS2 with an active job; the Config page should show "Receiving data" within a few seconds. Full instructions and troubleshooting: <a href="https://github.com/demortes/truckload-twitch-extension/blob/main/docs/streamer-setup.md">streamer setup guide</a>.</p>
   <footer>API status: <a href="/api/health/live">/api/health/live</a> &middot; <a href="/about/">About Truckload</a></footer>

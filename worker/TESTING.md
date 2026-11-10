@@ -103,7 +103,7 @@ npm run db:migrate:remote
 npm run deploy
 ```
 
-`db:migrate:remote` asks for confirmation before applying `0001_init.sql` to the remote database. The deploy
+`db:migrate:remote` asks for confirmation before applying all pending migrations (`0001_init.sql`, `0002_broadcast_token.sql`) to the remote database. The deploy
 prints the Worker's address, like `https://truckload.<your-subdomain>.workers.dev`. If this is your first
 Worker on the account, wrangler may ask you to register a `workers.dev` subdomain; accept.
 

@@ -33,5 +33,4 @@
   // Optional variables:
   //   BROADCAST_ENABLED          "false" stores telemetry but never relays it over Twitch PubSub
   //   MIN_BROADCAST_INTERVAL_MS  minimum gap between broadcasts to one channel (default 1000)
-  //   EXTENSION_URL, BRIDGE_DOWNLOAD_URL, DOCS_URL  links shown on the landing page
 }

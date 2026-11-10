@@ -256,3 +256,36 @@ describe("POST /api/ingest: completed job history", () => {
     expect(rows[19].cargo).toBe("Cargo 22");
   });
 });
+
+describe("POST /api/ingest: a stuck Twitch", () => {
+  it("gives the PubSub call an abort signal and reports failed when it times out", async () => {
+    const { env, sqlite } = createEnv();
+    addChannel(sqlite);
+    let seenSignal: AbortSignal | null | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        seenSignal = init.signal;
+        // Behave like a Twitch that never answers: only the abort signal can end this call.
+        return new Promise<Response>((_, reject) => {
+          init.signal?.addEventListener("abort", () => reject(init.signal?.reason ?? new Error("aborted")));
+        });
+      }),
+    );
+    const timeout = vi.spyOn(AbortSignal, "timeout").mockImplementation(() => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(new DOMException("timed out", "TimeoutError")), 10);
+      return controller.signal;
+    });
+
+    const started = Date.now();
+    const { res, json } = await ingest(env, payload());
+
+    expect(timeout).toHaveBeenCalledWith(5000);
+    expect(seenSignal).toBeDefined();
+    expect(res.status).toBe(200);
+    expect(json).toEqual({ stored: true, broadcast: "failed", retryAfterMs: null });
+    expect(Date.now() - started).toBeLessThan(2000);
+    timeout.mockRestore();
+  });
+});
