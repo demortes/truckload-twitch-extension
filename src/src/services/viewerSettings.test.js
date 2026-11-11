@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULT_SETTINGS, STORAGE_KEY, createSettingsStore, parseSettings } from './viewerSettings.js';
+import { DEFAULT_SETTINGS, STORAGE_KEY, createSettingsStore, parseSettings, pickStorage } from './viewerSettings.js';
 
 function fakeStorage(initial = {}) {
   const data = { ...initial };
@@ -121,4 +121,36 @@ test('unsubscribe stops notifications', () => {
   off();
   store.set({ units: 'metric' });
   assert.equal(calls, 0);
+});
+
+test('pickStorage returns the browser storage without writing to it', () => {
+  let writes = 0;
+  const storage = { getItem: () => null, setItem: () => writes++, removeItem: () => writes++ };
+  assert.equal(pickStorage({ localStorage: storage }), storage);
+  assert.equal(writes, 0);
+});
+
+test('a full storage (writes throw, reads work) still yields the saved preferences', () => {
+  const full = {
+    getItem: () => JSON.stringify({ units: 'metric', layout: 'compact' }),
+    setItem: () => {
+      throw new Error('QuotaExceededError');
+    },
+  };
+  const store = createSettingsStore(pickStorage({ localStorage: full }));
+  assert.equal(store.get().units, 'metric');
+  assert.equal(store.get().layout, 'compact');
+  store.set({ units: 'imperial' }); // the failed save does not throw and the choice holds for the session
+  assert.equal(store.get().units, 'imperial');
+});
+
+test('pickStorage returns null when touching localStorage throws, or there is no window', () => {
+  const blocked = {
+    get localStorage() {
+      throw new Error('SecurityError');
+    },
+  };
+  assert.equal(pickStorage(blocked), null);
+  assert.equal(pickStorage(undefined), null);
+  assert.equal(pickStorage({}), null);
 });

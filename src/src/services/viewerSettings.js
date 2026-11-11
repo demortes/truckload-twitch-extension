@@ -94,16 +94,20 @@ export function createSettingsStore(storage) {
   };
 }
 
-function browserStorage() {
+/**
+ * The browser's localStorage, or null when there is none or merely touching it throws (blocked storage).
+ * Deliberately no write probe: a full storage still serves reads, so saved preferences must stay readable;
+ * the store handles read and write failures separately.
+ *
+ * @param {{localStorage?: Storage}} [win] the window to look at (a parameter so it can be tested)
+ */
+export function pickStorage(win) {
   try {
-    const storage = window.localStorage;
-    const probe = '__truckload_probe__';
-    storage.setItem(probe, '1');
-    storage.removeItem(probe);
-    return storage;
+    return win?.localStorage ?? null;
   } catch {
-    return null; // also the case under node (no window), e.g. in unit tests
+    return null;
   }
 }
 
-export const viewerSettingsStore = createSettingsStore(browserStorage());
+// `window` does not exist under node (unit tests), where this yields null.
+export const viewerSettingsStore = createSettingsStore(pickStorage(typeof window === 'undefined' ? undefined : window));
