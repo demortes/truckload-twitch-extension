@@ -81,8 +81,23 @@ npm run build
 
 Without a Twitch extension context (`window.Twitch.ext`), every view falls
 back to shared mock data (`src/src/dev/mockTelemetry.js`) so the UI is
-inspectable on its own. To see a real channel's live data in a plain browser tab, use the dev-only
-`?channel=<id>&backend=<url>` mode (`src/src/dev/devBackend.js`).
+inspectable on its own.
+
+To see a real channel's **live production data** in a plain browser tab, open any view with the channel id, for
+example `http://localhost:5173/overlay.html?channel=9285`. It talks to `https://truckload.demortes.com` unless you
+add `&backend=<url>` (for example `&backend=http://localhost:8787` for a local Worker). To make every page
+from `npm run dev` live without query parameters, put this in `src/.env.development.local` (gitignored):
+
+```
+VITE_DEV_CHANNEL=<your twitch channel id>
+VITE_DEV_BACKEND=<optional; defaults to production>
+```
+
+A strip at the bottom of the page says what you are looking at: mock data or live, which backend and channel,
+how old the data is, and why nothing is showing (no data for the channel yet, an unreachable backend, or a
+bridge that has stopped sending). Note that the overlay and video component hide themselves when the data is
+more than two minutes old, so use the banner to tell "hidden on purpose" from "broken". The banner and this
+mode exist only in the dev server, never in release builds.
 
 ## Building for release
 
