@@ -40,24 +40,25 @@ See `docs/streamer-setup.md`.
 cd worker
 npm ci
 cp wrangler.example.jsonc wrangler.jsonc     # gitignored; holds your own D1 id
-# create worker/.dev.vars with TWITCH_CLIENT_ID, TWITCH_EXTENSION_SECRET (any base64 32 bytes) and BROADCAST_ENABLED=false
-npm run db:migrate:local
-npm run dev                                  # http://localhost:8787
+# create .dev.vars in this folder with TWITCH_CLIENT_ID, TWITCH_EXTENSION_SECRET (any base64 32 bytes)
+# and BROADCAST_ENABLED=false
 npm run typecheck && npm test
+npm run db:migrate:local
+npm run dev                                  # http://localhost:8787 (leave it running)
 ```
 
-Mint a dev broadcaster JWT to exercise the key-management endpoint without a real Twitch context:
+In a second terminal, from the **repository root**, mint a dev broadcaster JWT to exercise the key-management
+endpoint without a real Twitch context:
 
 ```bash
 node scripts/mint-dev-jwt.mjs --channel 12345 --secret <the same base64 secret>
 ```
 
-Run the bridge against it in demo mode (no game required):
+Then run the bridge against the Worker in demo mode (no game required), also from the repository root:
 
 ```bash
 dotnet run --project bridge/Truckload.Bridge -- --demo --ingest-url http://localhost:8787/api/ingest --key <key from POST /api/channels/keys>
 ```
-
 `worker/TESTING.md` has the full local-test, deploy and smoke-test walkthrough.
 
 ### Bridge (.NET 10)
