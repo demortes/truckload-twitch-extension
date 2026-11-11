@@ -13,7 +13,7 @@ import logo from '../../assets/logo.png';
 import '../../index.css';
 import './config.css';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8787';
 const BRIDGE_RELEASES_URL = 'https://github.com/demortes/truckload-twitch-extension/releases/latest';
 
 /** Splits on commas and/or newlines, trims, and drops empty entries. */

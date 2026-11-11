@@ -19,10 +19,10 @@ page) and tell the maintainer.
 
 In scope:
 
-- the backend (`backend/`, the extension backend service / EBS) and its API,
+- the Worker (`worker/`, the extension backend service / EBS) and its API,
 - the Bridge (`bridge/`) and the Windows installer (`installer/`),
 - the Twitch extension frontend (`src/`),
-- the deployment files (`deploy/`, `k8s/`) and CI workflows (`.github/`).
+- the CI and deploy workflows (`.github/`).
 
 Out of scope: vulnerabilities in the games, the SCS SDK, [TruckTel](https://github.com/jvanstraten/TruckTel),
 Twitch itself, or third-party dependencies (report those upstream; tell us if a fix needs a version bump here).
@@ -37,4 +37,4 @@ Only the latest release is supported.
   a URL, and the ingest and key-management endpoints are rate limited.
 - The telemetry for a channel is readable without authentication at `GET /api/telemetry/{channelId}`. That is
   by design (it is the same data viewers see in the extension); it contains no viewer data.
-- The backend stores only a channel ID, its ingest key, the latest telemetry snapshot, and completed-job history.
+- The Worker's D1 database stores only a channel ID, its ingest key, the latest telemetry snapshot, and completed-job history.

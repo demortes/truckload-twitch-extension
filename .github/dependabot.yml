@@ -13,8 +13,6 @@ updates:
 
   - package-ecosystem: nuget
     directories:
-      - "/backend/Truckload.Ebs"
-      - "/backend/Truckload.Ebs.Tests"
       - "/bridge/Truckload.Bridge"
       - "/bridge/Truckload.Bridge.Tests"
       - "/shared/Truckload.Contracts"
@@ -39,7 +37,3 @@ updates:
     groups:
       worker:
         update-types: ["minor", "patch"]
-  - package-ecosystem: docker
-    directory: "/backend/Truckload.Ebs"
-    schedule:
-      interval: weekly

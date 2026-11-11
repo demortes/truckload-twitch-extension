@@ -12,7 +12,7 @@ export function getDevBackend() {
   const channel = params.get('channel');
   if (!channel || !/^[\w-]+$/.test(channel)) return null;
 
-  const backend = (params.get('backend') || import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080').replace(/\/+$/, '');
+  const backend = (params.get('backend') || import.meta.env.VITE_BACKEND_URL || 'http://localhost:8787').replace(/\/+$/, '');
   if (!/^https?:\/\//.test(backend)) return null;
 
   return { channel, backend };

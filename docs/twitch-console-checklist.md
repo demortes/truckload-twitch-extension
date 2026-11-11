@@ -41,9 +41,9 @@ The extension icon is `docs/assets/logo.png` (100x100 PNG with transparent corne
 
 ## Credentials
 
-- Copy the **Client ID** into the backend's `Twitch__ClientId`.
+- Copy the **Client ID** into the Worker's `TWITCH_CLIENT_ID` secret (`npx wrangler secret put TWITCH_CLIENT_ID`).
 - Copy the **Extension Secret** (base64, as shown in the console) into the
-  backend's `Twitch__ExtensionSecret`.
+  Worker's `TWITCH_EXTENSION_SECRET` secret. Enter both at the masked prompt; never commit them.
 
 ## Lifecycle
 

@@ -14,9 +14,12 @@ The README has the full instructions. In short:
 
 ```bash
 dotnet restore Truckload.slnx
-dotnet test Truckload.slnx          # backend + bridge tests
+dotnet test Truckload.slnx          # bridge and contract tests
 
-cd src && npm ci
+cd worker && npm ci
+npm run typecheck && npm test    # the Cloudflare Worker (backend)
+
+cd ../src && npm ci
 npm run lint && npm run build       # frontend
 ```
 
@@ -26,11 +29,11 @@ to mock data when there is no Twitch extension context (see the README).
 ## Pull requests
 
 - Keep each PR focused, and describe **what changed and why**.
-- Add or update tests for behavior changes (`backend/Truckload.Ebs.Tests`, `bridge/Truckload.Bridge.Tests`).
-- CI must pass: .NET build and tests, frontend lint and build, the Docker image build, and the installer build.
-- Changes to the telemetry payload belong in `shared/Truckload.Contracts` and `docs/telemetry-contract.md`.
-  The contract is additive: the backend rejects unknown fields, so the **backend must be deployed before a
-  Bridge that sends a new field**.
+- Add or update tests for behavior changes (`worker/test`, `bridge/Truckload.Bridge.Tests`).
+- CI must pass: .NET build and tests, frontend lint and build, the Worker typecheck, tests and bundle, and the installer build.
+- Changes to the telemetry payload belong in `shared/Truckload.Contracts`, its mirror `worker/src/lib/contract.ts`,
+  and `docs/telemetry-contract.md`. The contract is additive: the Worker rejects unknown fields, so the **Worker
+  must be deployed before a Bridge that sends a new field**.
 - UI changes: please check them at the real Twitch sizes (panel 318x500, overlay, mobile, video component) and keep
   them accessible (keyboard operable, readable contrast, no `aria-live` on fast-changing values).
 - Match the surrounding code's style and comment density.
