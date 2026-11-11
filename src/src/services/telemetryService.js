@@ -171,6 +171,45 @@ export function initialize(options = {}) {
   }
 }
 
+// Dev-only: what the last poll of the backend did, so the dev banner can say why a page is empty
+// (wrong host, CORS, no data for the channel) instead of leaving it blank.
+let devStatus = { phase: 'idle', error: null, httpStatus: null, lastOkAt: null };
+let devStatusListeners = [];
+
+export function getDevStatus() {
+  return devStatus;
+}
+
+export function subscribeDevStatus(callback) {
+  devStatusListeners.push(callback);
+  callback(devStatus);
+  return () => {
+    devStatusListeners = devStatusListeners.filter((l) => l !== callback);
+  };
+}
+
+function setDevStatus(next) {
+  devStatus = { ...devStatus, ...next };
+  devStatusListeners.forEach((callback) => callback(devStatus));
+}
+
+async function fetchLatestForDev(backendUrl, channelId) {
+  try {
+    const response = await fetch(`${backendUrl}/api/telemetry/${encodeURIComponent(channelId)}`);
+    if (response.ok) {
+      applyPayload({ ...(await response.json()), events: [] });
+      setDevStatus({ phase: 'ok', error: null, httpStatus: response.status, lastOkAt: Date.now() });
+    } else {
+      setDevStatus({
+        phase: 'error',
+        httpStatus: response.status,
+        error: response.status === 404 ? 'no data stored for this channel yet (404)' : `backend answered HTTP ${response.status}`,
+      });
+    }
+  } catch (err) {
+    setDevStatus({ phase: 'error', httpStatus: null, error: `could not reach the backend (network or CORS): ${err?.message ?? err}` });
+  }
+}
 /**
  * Dev-only: polls the backend's latest-snapshot endpoint instead of waiting for Twitch PubSub, so a
  * view can be tested in a plain browser against a real channel (see dev/devBackend.js). Events are
@@ -179,7 +218,8 @@ export function initialize(options = {}) {
  */
 export function startDevPolling(backendUrl, channelId, intervalMs = 2000) {
   startStaleTracking();
-  const poll = () => fetchInitialState(backendUrl, channelId);
+  setDevStatus({ phase: 'idle', error: null, httpStatus: null, lastOkAt: null });
+  const poll = () => fetchLatestForDev(backendUrl, channelId);
   poll();
   const timer = setInterval(poll, intervalMs);
   return () => {
@@ -265,4 +305,6 @@ export default {
   startTruckyPolling,
   stopTruckyPolling,
   startDevPolling,
+  getDevStatus,
+  subscribeDevStatus,
 };
