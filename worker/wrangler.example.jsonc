@@ -26,6 +26,16 @@
     { "name": "INGEST_LIMITER", "namespace_id": "1001", "simple": { "limit": 50, "period": 10 } },
     { "name": "KEYS_LIMITER", "namespace_id": "1002", "simple": { "limit": 20, "period": 10 } }
   ],
+  // Optional: also export logs and traces to Datadog (or any OTLP backend). Create the destinations in the
+  // Cloudflare dashboard first (the endpoint and the dd-api-key header live there, never in this file), then
+  // replace the line below with:
+  //   "observability": {
+  //     "enabled": true,
+  //     "logs":   { "enabled": true, "destinations": ["datadog-logs"],   "head_sampling_rate": 0.1 },
+  //     "traces": { "enabled": true, "destinations": ["datadog-traces"], "head_sampling_rate": 0.1 }
+  //   }
+  // Left commented out on purpose: CI builds wrangler.jsonc from this template, and a deploy that names a
+  // destination that does not exist in the target account can fail. See README.md ("Datadog export").
   "observability": { "enabled": true }
   // Secrets (set with `wrangler secret put <NAME>`, or put in .dev.vars for local runs):
   //   TWITCH_CLIENT_ID         the extension client id
