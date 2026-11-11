@@ -90,6 +90,35 @@ page and update their bridge. Do these in order, and not before step 4 above is 
 3. Stop the old stack (`deploy/` Compose or `k8s/`). Keep it until you are sure.
 4. Delete the legacy backend in a follow-up change once the Worker has been live for a while.
 
+## Datadog export (optional)
+
+Workers Observability can export **logs and traces** to Datadog over OpenTelemetry (OTLP), with no agent. Nothing
+here is enabled by default, and **this has not been tested against a real Datadog account**; check
+[Cloudflare's export docs](https://developers.cloudflare.com/workers/observability/exporting-opentelemetry-data)
+and [Datadog's OTLP docs](https://docs.datadoghq.com/opentelemetry/setup/otlp_ingest/managed_platforms/) for the
+current values.
+
+1. In the Cloudflare dashboard, create two destinations (one for traces, one for logs) in Workers
+   Observability, for example `datadog-traces` and `datadog-logs`. The Datadog API key goes in the destination's
+   headers, never in this repository:
+
+   | Destination | Endpoint (Datadog site `us5.datadoghq.com`) | Header |
+   | --- | --- | --- |
+   | traces | `https://cloudflare.integrations.otlp.us5.datadoghq.com/v1/traces` | `dd-api-key: <API key>` |
+   | logs | `https://cloudflare.integrations.otlp.us5.datadoghq.com/v1/logs` | `dd-api-key: <API key>` |
+
+   For another Datadog site, replace `us5.datadoghq.com`. If Datadog answers 403, check the site, that the key's
+   org has OTLP access, and whether your setup also needs a `dd-otlp-source` header (Datadog's managed-platform
+   page says it does not; its direct-intake pages say it does).
+2. In your own `wrangler.jsonc`, replace the `observability` line with the commented block shown in
+   `wrangler.example.jsonc`. Both `logs` and `traces` also accept `persist: false` to export without storing the
+   data in Cloudflare.
+3. `npm run deploy` (or merge to `main`, if CI deploys for you).
+
+Cautions: every ingest writes one or two structured log lines (`event: ingest`), so an active channel produces a
+lot of log volume; start with `head_sampling_rate` below 1, as in the example. And keep the destination names out of
+the committed template unless every environment that deploys from it has them, because CI builds
+`wrangler.jsonc` from `wrangler.example.jsonc`.
 ## What differs from the .NET backend
 
 - **Rate limits** use Workers Rate Limiting bindings: per ingest key (50 requests per 10 seconds, a
