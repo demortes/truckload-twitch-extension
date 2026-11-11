@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import mockJobHistory from '../dev/mockJobHistory';
 import { onAuthorized } from '../services/twitchAuth';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8787';
 
 // There's no live push channel for history the way there is for the main telemetry
 // snapshot (see useTelemetry/telemetryService) — a completed job doesn't broadcast

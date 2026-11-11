@@ -41,24 +41,11 @@
             "skipFiles": ["<node_internals>/**"]
         },
         {
-            "name": "Launch Backend (ASP.NET)",
-            "type": "coreclr",
+            "name": "Run Worker (wrangler dev)",
+            "type": "node-terminal",
             "request": "launch",
-            "preLaunchTask": "build-backend",
-            "program": "${workspaceFolder}/backend/Truckload.Ebs/bin/Debug/net10.0/Truckload.Ebs.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/backend/Truckload.Ebs",
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            },
-            "console": "integratedTerminal",
-            "stopAtEntry": false
-        },
-        {
-            "name": "Attach to Backend",
-            "type": "coreclr",
-            "request": "attach",
-            "processName": "Truckload.Ebs"
+            "command": "npm run dev",
+            "cwd": "${workspaceFolder}/worker"
         }
     ],
     "compounds": [
@@ -75,8 +62,8 @@
             "preLaunchTask": ""
         },
         {
-            "name": "Full Stack (Backend + Frontend + Chrome)",
-            "configurations": ["Launch Backend (ASP.NET)", "Launch Dev Server", "Debug in Chrome"],
+            "name": "Full Stack (Worker + Frontend + Chrome)",
+            "configurations": ["Run Worker (wrangler dev)", "Launch Dev Server", "Debug in Chrome"],
             "stopAll": true
         }
     ]

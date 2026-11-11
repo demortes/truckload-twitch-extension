@@ -1,7 +1,7 @@
 # Third-party notices
 
 Truckload is MIT licensed (see [LICENSE](LICENSE)). It uses, bundles or interoperates with the following.
-Exact dependency versions are in the lock and project files (`src/package-lock.json`, the `.csproj` files).
+Exact dependency versions are in the lock and project files (`src/package-lock.json`, `worker/package-lock.json`, the `.csproj` files).
 
 ## Bundled in release downloads
 
@@ -36,18 +36,12 @@ SOFTWARE.
 
 The authoritative text is the `LICENSE` file shipped with the plugin (`plugins/trucktel/LICENSE`).
 
-### Datadog .NET tracer (backend container image)
-
-The backend image includes the Datadog .NET tracer via the `Datadog.Trace.Bundle` package, licensed under the
-Apache License 2.0 (<https://github.com/DataDog/dd-trace-dotnet>).
-
 ## Libraries (not modified)
 
 | Component | License |
 |---|---|
-| .NET runtime and ASP.NET Core, Entity Framework Core | MIT |
-| Npgsql and the Npgsql EF Core provider | PostgreSQL License |
-| OpenTelemetry .NET (SDK, OTLP exporter, instrumentation) | Apache-2.0 |
+| .NET runtime (Bridge and tray app) | MIT |
+| Hono (the Worker's web framework) | MIT |
 | React, React DOM, Vite and the frontend build tooling | MIT |
 
 The Windows installer is built with [Inno Setup](https://jrsoftware.org/isinfo.php).

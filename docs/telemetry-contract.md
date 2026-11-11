@@ -6,8 +6,8 @@ it identically whether it arrived via the initial `/api/telemetry/{channelId}`
 fetch or a live Twitch Extension PubSub message.
 
 The canonical C# types live in `shared/Truckload.Contracts` (`TelemetryPayload`,
-`JobInfo`, `TruckInfo`) and are shared by the backend and bridge projects so
-they can never drift from each other.
+`JobInfo`, `TruckInfo`) and are used by the bridge. The Worker (the backend) mirrors them,
+including validation, in `worker/src/lib/contract.ts`; change both together.
 
 ## Shape
 

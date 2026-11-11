@@ -11,21 +11,22 @@ right on the stream.
 ## Architecture
 
 ```
-ATS / ETS2  →  local telemetry server  →  Truckload Bridge  →  Backend (EBS)  →  Twitch Extension PubSub  →  Viewers
-                (Funbit-compatible)         (bridge/)            (backend/)
+ATS / ETS2  →  TruckTel (or a Funbit-compatible server)  →  Truckload Bridge  →  Worker (EBS)  →  Twitch Extension PubSub  →  Viewers
+                  (local game plugin)                        (bridge/)           (worker/)
 ```
 
-- **`bridge/Truckload.Bridge`** — a small Windows console app the streamer
-  runs on their PC. Polls the local ETS2/ATS telemetry server, normalizes the
-  data, and sends it to the backend. See `bridge/README.md`.
-- **`backend/Truckload.Ebs`** — the extension backend service (ASP.NET Core +
-  PostgreSQL). Validates and stores the latest telemetry per channel, and
-  relays it to viewers over Twitch's Extension PubSub.
-- **`shared/Truckload.Contracts`** — the canonical telemetry payload contract
-  shared by the backend and the bridge, so they can't drift apart. See
-  `docs/telemetry-contract.md`.
-- **`src/`** — the React/Vite frontend: five views (panel, video overlay,
-  video component, mobile, and the broadcaster's config page).
+- **`bridge/Truckload.Bridge`** — the console app the streamer runs on their PC. Polls the local ETS2/ATS
+  telemetry server, normalizes the data, and sends it to the backend. **`bridge/Truckload.Bridge.Tray`** is the
+  same bridge as a Windows tray app with a status light, first-run window and update prompts (the Windows
+  installer sets it up). See `bridge/README.md`.
+- **`worker/`** — the extension backend (EBS) as a **Cloudflare Worker** (Hono + TypeScript) on **D1**, with the
+  landing page and docs site served as static assets from the same origin. It validates and stores the latest
+  telemetry per channel, archives completed jobs, manages ingest keys, and relays telemetry to viewers over
+  Twitch's Extension PubSub. See `worker/README.md`.
+- **`shared/Truckload.Contracts`** — the canonical telemetry payload contract used by the bridge. The Worker
+  mirrors it in `worker/src/lib/contract.ts`. See `docs/telemetry-contract.md`.
+- **`src/`** — the React/Vite frontend: five views (panel, video overlay, video component, mobile, and the
+  broadcaster's config page). Twitch hosts it, not Cloudflare.
 
 ## For streamers
 
@@ -33,25 +34,19 @@ See `docs/streamer-setup.md`.
 
 ## Development
 
-### Backend + bridge (.NET 10)
+### Worker (Node 24, Cloudflare Workers)
 
 ```bash
-dotnet restore Truckload.slnx
-dotnet build Truckload.slnx
-dotnet test Truckload.slnx
+cd worker
+npm ci
+cp wrangler.example.jsonc wrangler.jsonc     # gitignored; holds your own D1 id
+# create worker/.dev.vars with TWITCH_CLIENT_ID, TWITCH_EXTENSION_SECRET (any base64 32 bytes) and BROADCAST_ENABLED=false
+npm run db:migrate:local
+npm run dev                                  # http://localhost:8787
+npm run typecheck && npm test
 ```
 
-Run the backend locally against Postgres in Docker:
-
-```bash
-cd backend
-cp .env.example .env   # fill in a Twitch client id + base64 secret (any 32 random bytes work for local dev)
-docker compose up -d
-curl http://localhost:25846/api/health
-```
-
-Mint a dev broadcaster JWT to exercise the key-management endpoint without a
-real Twitch context:
+Mint a dev broadcaster JWT to exercise the key-management endpoint without a real Twitch context:
 
 ```bash
 node scripts/mint-dev-jwt.mjs --channel 12345 --secret <the same base64 secret>
@@ -60,7 +55,17 @@ node scripts/mint-dev-jwt.mjs --channel 12345 --secret <the same base64 secret>
 Run the bridge against it in demo mode (no game required):
 
 ```bash
-dotnet run --project bridge/Truckload.Bridge -- --demo --ingest-url http://localhost:25846/api/ingest --key <key from the Config page/API>
+dotnet run --project bridge/Truckload.Bridge -- --demo --ingest-url http://localhost:8787/api/ingest --key <key from POST /api/channels/keys>
+```
+
+`worker/TESTING.md` has the full local-test, deploy and smoke-test walkthrough.
+
+### Bridge (.NET 10)
+
+```bash
+dotnet restore Truckload.slnx
+dotnet build Truckload.slnx
+dotnet test Truckload.slnx          # bridge and contract tests
 ```
 
 ### Frontend (Node 22, React 19, Vite)
@@ -75,24 +80,25 @@ npm run build
 
 Without a Twitch extension context (`window.Twitch.ext`), every view falls
 back to shared mock data (`src/src/dev/mockTelemetry.js`) so the UI is
-inspectable on its own.
+inspectable on its own. To see a real channel's live data in a plain browser tab, use the dev-only
+`?channel=<id>&backend=<url>` mode (`src/src/dev/devBackend.js`).
 
 ## Building for release
 
-- Backend image: `docker build -f backend/Truckload.Ebs/Dockerfile .` (from
-  the repo root).
 - Bridge: `dotnet publish bridge/Truckload.Bridge -c Release -r win-x64 --self-contained -p:PublishSingleFile=true`.
+- Tray app and installer: `installer/build.ps1` (needs Inno Setup 6).
 - Frontend: `cd src && npm run build && npm run zip` produces
   `truckload-extension.zip`, ready to upload to the Twitch Developer Console.
 
-`.github/workflows/release.yml` does all three on a `v*` tag push and
-publishes them as GitHub release assets / a GHCR image.
+`.github/workflows/release.yml` builds the bridge zips, the tray zip, the installer and the frontend zip on a
+`v*` tag push and publishes them as GitHub release assets.
 
 ## Deployment
 
-See `deploy/DEPLOY.md` for the supported single-VM (Docker Compose + Caddy)
-deployment. `k8s/` holds a secondary, less-exercised Kubernetes path.
-
+Production is the Cloudflare Worker. `.github/workflows/worker.yml` runs typecheck, tests and a dry-run bundle
+on every pull request, and on `main` applies D1 migrations and deploys (it needs the `CLOUDFLARE_API_TOKEN`,
+`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_D1_DATABASE_ID` repository secrets, and skips itself without them).
+First-time setup, secrets, custom domain and rollback are in `worker/README.md` and `worker/TESTING.md`.
 ## Twitch extension review
 
 See `docs/twitch-console-checklist.md` and `docs/twitch-review-guide.md`.
@@ -100,8 +106,7 @@ See `docs/twitch-console-checklist.md` and `docs/twitch-review-guide.md`.
 ## What's out of scope for v1
 
 Convoy/TruckersMP status (code is present but feature-flagged off — see
-`src/src/config/features.js`), further Kubernetes polish, non-Windows bridge
-builds, and historical telemetry storage.
+`src/src/config/features.js`) and historical telemetry storage.
 
 ## Contributing and security
 

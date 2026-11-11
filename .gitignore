@@ -41,3 +41,6 @@ installer/output/
 
 # Local Claude Code tooling (settings, worktrees)
 .claude/
+
+# Wrangler local state (created if wrangler is run from the repo root)
+.wrangler/

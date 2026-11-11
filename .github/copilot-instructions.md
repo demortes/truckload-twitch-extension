@@ -48,11 +48,11 @@ Project-specific conventions and gotchas
 Patterns for code edits and PRs
 - Prefer updating `telemetryService`/`useTelemetry` when adding cross-view data needs — they centralize the PubSub listener and store.
 - Keep components pure and read-only: components call `subscribe()` (via the hook) and render state; avoid starting/stopping polling directly inside presentational components.
-- Any change to the wire payload shape must be made in `shared/Truckload.Contracts` (the canonical contract, used by both the backend and the bridge), then mirrored here.
+- Any change to the wire payload shape must be made in `shared/Truckload.Contracts` (the canonical contract, used by the bridge and mirrored by the Worker in `worker/src/lib/contract.ts`), then mirrored here.
 
 Debugging tips
 - Console logs: `telemetryService` logs connection/parse issues to the browser console — check devtools during `npm run dev`.
-- To see live data locally without Twitch, run `bridge/Truckload.Bridge --demo` against a local backend, and load a view with a small dev-only Twitch helper shim (see the streamer/dev setup doc for the exact env vars).
+- To see live data locally without Twitch, run `bridge/Truckload.Bridge --demo` against a local Worker (`cd worker && npm run dev`), and load a view with a small dev-only Twitch helper shim (see the streamer/dev setup doc for the exact env vars).
 
 If something is missing
 - Tell me which area you want expanded (build details, telemetry adapter examples, or component conventions) and I will update this file.

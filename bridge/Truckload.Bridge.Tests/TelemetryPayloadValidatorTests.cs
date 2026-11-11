@@ -1,7 +1,7 @@
 using Truckload.Contracts;
 using Xunit;
 
-namespace Truckload.Ebs.Tests;
+namespace Truckload.Bridge.Tests;
 
 public class TelemetryPayloadValidatorTests
 {

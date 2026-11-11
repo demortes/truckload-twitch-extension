@@ -11,72 +11,8 @@ concurrency:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
-  backend-image:
-    name: Build and push backend image
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      started_at: ${{ steps.version.outputs.started_at }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Derive version
-        id: version
-        run: |
-          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          echo "started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-      - name: Docker metadata (OCI labels)
-        id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/truckload-ebs
-      - name: Log in to GHCR
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          file: backend/Truckload.Ebs/Dockerfile
-          push: true
-          build-args: |
-            VERSION=${{ steps.version.outputs.version }}
-            GIT_SHA=${{ github.sha }}
-            BUILD_DATE=${{ steps.meta.outputs.created }}
-            SOURCE_URL=${{ github.server_url }}/${{ github.repository }}
-          labels: ${{ steps.meta.outputs.labels }}
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/truckload-ebs:${{ steps.version.outputs.version }}
-            ghcr.io/${{ github.repository_owner }}/truckload-ebs:latest
-
-  datadog-deployment:
-    name: Record release in Datadog (DORA)
-    needs: [backend-image]
-    runs-on: ubuntu-latest
-    # Holds the API key, so it runs no repository code: just the pinned datadog-ci CLI. Skipped without the secret.
-    env:
-      DD_API_KEY: ${{ secrets.DD_API_KEY }}
-      DD_SITE: ${{ vars.DD_SITE || 'datadoghq.com' }}
-    steps:
-      - name: Record deployment
-        if: ${{ env.DD_API_KEY != '' }}
-        run: >
-          npx --yes @datadog/datadog-ci@5.24.1 dora deployment
-          --service truckload-ebs
-          --env production
-          --version ${{ needs.backend-image.outputs.version }}
-          --started-at ${{ needs.backend-image.outputs.started_at }}
-          --git-repository-url ${{ github.server_url }}/${{ github.repository }}
-          --git-commit-sha ${{ github.sha }}
-
   bridge:
     name: Publish bridge exe (${{ matrix.rid }})
     strategy:
@@ -183,14 +119,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Require production backend URL
-        # Without this the frontend silently falls back to http://localhost:8080, which
+        # Without this the frontend silently falls back to http://localhost:8787, which
         # cannot work from a viewer's/broadcaster's browser.
         env:
           BACKEND_URL: ${{ vars.BACKEND_URL }}
         run: |
           case "$BACKEND_URL" in
             https://*) ;;
-            *) echo "::error::Set the BACKEND_URL repository variable to the backend's public HTTPS URL (Settings > Secrets and variables > Actions > Variables)."; exit 1 ;;
+            *) echo "::error::Set the BACKEND_URL repository variable to the Worker's public HTTPS URL (Settings > Secrets and variables > Actions > Variables)."; exit 1 ;;
           esac
       - name: Build with the production backend URL
         run: npm run build
@@ -208,16 +144,12 @@ jobs:
 
   release:
     name: Publish GitHub release
-    needs: [backend-image, bridge, frontend, installer]
+    needs: [bridge, frontend, installer]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
-        # Restricted to our own release-asset artifacts. Without a pattern,
-        # this also tries to pull docker/build-push-action's auto-uploaded
-        # build-record artifact (name like `<owner>~<repo>~<hash>.dockerbuild`
-        # from the backend-image job), which isn't a zip and reliably fails
-        # to download/extract, failing this job even though every real asset
-        # already downloaded successfully.
+        # Restricted to our own release-asset artifacts, so no other artifact uploaded during the
+        # run (which may not be a zip) can fail the download.
         uses: actions/download-artifact@v8
         with:
           path: artifacts

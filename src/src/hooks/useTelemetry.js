@@ -6,7 +6,7 @@ import { FEATURES } from '../config/features';
 import mockTelemetry from '../dev/mockTelemetry';
 import { getDevBackend } from '../dev/devBackend';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8787';
 
 /**
  * Shared telemetry wiring for every view (panel/overlay/mobile/component).
