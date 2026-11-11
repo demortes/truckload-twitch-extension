@@ -6,11 +6,15 @@ import Dashboard from '../../components/Dashboard';
 import EventToast from '../../components/EventToast';
 import { useTelemetry } from '../../hooks/useTelemetry';
 import { useOverlayVisibility } from '../../hooks/useOverlayVisibility';
+import { useViewerUnits } from '../../hooks/useViewerUnits';
 import { FEATURES } from '../../config/features';
 import './overlay.css';
 
 function OverlayApp() {
-  const { job, truck, dashboard, convoy, units, connected, stale, lastLiveAt, events } = useTelemetry();
+  const telemetry = useTelemetry();
+  const { convoy, connected, stale, lastLiveAt, events } = telemetry;
+  // The viewer's own units (set in the panel or mobile app) apply here too.
+  const { job, truck, dashboard, units } = useViewerUnits(telemetry);
   const visible = useOverlayVisibility({ connected, stale, lastLiveAt });
 
   // Nothing over the stream while they are not playing.

@@ -1,18 +1,6 @@
 import '../styles/Panel.css';
+import { formatDeliveryTime } from '../services/deliveryTime';
 
-function formatTimeAgo(completedAt) {
-  const completedMs = new Date(completedAt).getTime();
-  if (Number.isNaN(completedMs)) return '';
-
-  const diffMinutes = Math.max(0, Math.round((Date.now() - completedMs) / 60_000));
-  if (diffMinutes < 1) return 'just now';
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
-
-  const hours = Math.floor(diffMinutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-
-  return `${Math.floor(hours / 24)}d ago`;
-}
 
 /**
  * Session-scoped "recent deliveries" feed: the last few jobs completed on this
@@ -20,7 +8,7 @@ function formatTimeAgo(completedAt) {
  * already been delivered. Backed by GET /api/telemetry/{channelId}/history
  * (see hooks/useJobHistory).
  */
-function RecentDeliveries({ history = [], units = 'imperial' }) {
+function RecentDeliveries({ history = [], units = 'imperial', deliveryTimes = 'ago' }) {
   const distanceUnit = units === 'metric' ? 'km' : 'mi';
 
   return (
@@ -43,7 +31,7 @@ function RecentDeliveries({ history = [], units = 'imperial' }) {
                 <div className="job-history-cargo">{entry.cargo}</div>
                 <div className="job-history-route">{entry.source} → {entry.destination}</div>
                 <div className="job-history-meta">
-                  {entry.distance} {distanceUnit} · {formatTimeAgo(entry.completedAt)}
+                  {entry.distance} {distanceUnit} · {formatDeliveryTime(entry.completedAt, deliveryTimes)}
                 </div>
               </div>
             ))}

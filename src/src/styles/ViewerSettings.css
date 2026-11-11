@@ -1,0 +1,109 @@
+/* Viewer display settings: gear button + popover. Uses the shared theme tokens from index.css. */
+.vs-root {
+  position: relative;
+  display: inline-flex;
+}
+
+.vs-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.vs-button:hover,
+.vs-button[aria-expanded='true'] {
+  color: var(--text-primary);
+  background: var(--bg-accent);
+}
+
+.vs-button:focus-visible,
+.vs-reset:focus-visible,
+.vs-choice input:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+.vs-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.vs-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  width: 240px;
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
+  padding: var(--spacing-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--panel-radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+  text-align: left;
+}
+
+.vs-group {
+  margin: 0 0 var(--spacing-md);
+  padding: 0;
+  border: 0;
+}
+
+.vs-group legend {
+  padding: 0;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.vs-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 3px 0;
+  cursor: pointer;
+}
+
+.vs-reset {
+  width: 100%;
+  padding: 6px;
+  background: var(--bg-accent);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.vs-note {
+  margin: var(--spacing-sm) 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* "Compact" layout: tighter spacing and type for the panel and mobile views. */
+.layout-compact {
+  --spacing-sm: 4px;
+  --spacing-md: 6px;
+  --spacing-lg: 8px;
+  font-size: 12px;
+}
+/* Status badge and gear side by side in a header. */
+.vs-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}

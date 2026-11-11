@@ -51,3 +51,7 @@
   min-width: auto;
   background: var(--bg-secondary);
 }
+
+.mobile-actions {
+  padding: 0 var(--spacing-sm);
+}

@@ -6,8 +6,11 @@ import CollapsibleSection from '../../components/CollapsibleSection';
 import StatusBadge from '../../components/StatusBadge';
 import Dashboard from '../../components/Dashboard';
 import EventToast from '../../components/EventToast';
+import ViewerSettings from '../../components/ViewerSettings';
 import { useTelemetry } from '../../hooks/useTelemetry';
 import { useJobHistory } from '../../hooks/useJobHistory';
+import { useViewerSettings } from '../../hooks/useViewerSettings';
+import { useViewerUnits } from '../../hooks/useViewerUnits';
 import { FEATURES } from '../../config/features';
 import logo from '../../assets/logo.png';
 import './panel.css';
@@ -44,31 +47,45 @@ const HistoryIcon = (
 );
 
 function PanelApp() {
-  const { job, truck, dashboard, convoy, units, connected, stale, events } = useTelemetry();
+  const telemetry = useTelemetry();
+  const { convoy, connected, stale, events } = telemetry;
+  const [settings] = useViewerSettings();
+  // Everything below shows the viewer's own units; numbers are converted from the stream's.
   const history = useJobHistory();
+  const { job, truck, dashboard, units, history: shownHistory } = useViewerUnits({ ...telemetry, history });
+  const { sections } = settings;
 
   return (
-    <div className="panel-view">
+    <div className={`panel-view ${settings.layout === 'compact' ? 'layout-compact' : ''}`}>
       <EventToast events={events} />
       <div className="panel-header-bar">
         <span className="panel-logo">
           <img className="panel-logo-img" src={logo} alt="" width="18" height="18" />
           TRUCKLOAD
         </span>
-        <StatusBadge connected={connected} stale={stale} />
+        <span className="vs-actions">
+          <StatusBadge connected={connected} stale={stale} />
+          <ViewerSettings />
+        </span>
       </div>
       <div className="panel-content-area">
         <Dashboard dashboard={dashboard} truck={truck} units={units} live={connected && !stale} variant="full" />
-        <CollapsibleSection title="Current Job" icon={JobIcon} defaultExpanded={true}>
-          <JobInfo job={job} units={units} />
-        </CollapsibleSection>
-        <CollapsibleSection title="Truck" icon={TruckIcon} defaultExpanded={false}>
-          <TruckStats truck={truck} units={units} />
-        </CollapsibleSection>
-        <CollapsibleSection title="Recent Deliveries" icon={HistoryIcon} defaultExpanded={false}>
-          <RecentDeliveries history={history} units={units} />
-        </CollapsibleSection>
-        {FEATURES.convoy && (
+        {sections.job && (
+          <CollapsibleSection title="Current Job" icon={JobIcon} defaultExpanded={true}>
+            <JobInfo job={job} units={units} />
+          </CollapsibleSection>
+        )}
+        {sections.truck && (
+          <CollapsibleSection title="Truck" icon={TruckIcon} defaultExpanded={false}>
+            <TruckStats truck={truck} units={units} />
+          </CollapsibleSection>
+        )}
+        {sections.history && (
+          <CollapsibleSection title="Recent Deliveries" icon={HistoryIcon} defaultExpanded={false}>
+            <RecentDeliveries history={shownHistory} units={units} deliveryTimes={settings.deliveryTimes} />
+          </CollapsibleSection>
+        )}
+        {FEATURES.convoy && sections.convoy && (
           <CollapsibleSection title="Convoy" icon={ConvoyIcon} defaultExpanded={false}>
             <Convoy convoy={convoy} />
           </CollapsibleSection>
