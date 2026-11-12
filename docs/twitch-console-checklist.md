@@ -58,6 +58,9 @@ The extension icon is `docs/assets/logo.png` (100x100 PNG with transparent corne
 
 ## Privacy
 
-The backend stores only: a channel ID, an ingest key, and the latest
-telemetry snapshot for that channel. No viewer data is collected. State this
-plainly in the extension's privacy policy field if one is required.
+The backend stores only: a channel ID, an ingest key, the latest telemetry
+snapshot for that channel, and the channel's recent completed jobs. No viewer
+data is collected. Viewers' display preferences (units, layout, which sections
+to show) are kept only in the viewer's own browser (`localStorage`) and are never
+sent to the backend. State this plainly in the extension's privacy policy field
+if one is required.

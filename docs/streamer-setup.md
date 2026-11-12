@@ -58,6 +58,13 @@ Start ATS or ETS2 with an active job. Your Config page's **Status** section
 should show "Receiving data" within a few seconds. Your panel/overlay should
 show the same job and truck stats to viewers.
 
+## What your viewers can customize
+
+Each viewer has a small gear button in the panel and mobile views. From it they can pick **kilometers or miles**
+(or match your stream), a **compact layout**, which sections to show (job, truck, recent deliveries), and whether
+recent deliveries read "5m ago" or as a 12-hour or 24-hour clock time. Their choices are saved in their own
+browser only, never on your channel or on our servers, and the video overlay and component follow the units they
+choose. Nothing is needed from you.
 ## Troubleshooting
 
 - **Config page shows no data** — make sure the Bridge is running and its

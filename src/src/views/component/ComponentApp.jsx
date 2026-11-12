@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTelemetry } from '../../hooks/useTelemetry';
 import { useOverlayVisibility } from '../../hooks/useOverlayVisibility';
+import { useViewerUnits } from '../../hooks/useViewerUnits';
 import Dashboard from '../../components/Dashboard';
 import './component.css';
 
@@ -12,7 +13,9 @@ function formatTime(minutes) {
 }
 
 function ComponentApp() {
-  const { job, truck, dashboard, units, connected, stale, lastLiveAt } = useTelemetry();
+  const telemetry = useTelemetry();
+  const { connected, stale, lastLiveAt } = telemetry;
+  const { job, truck, dashboard, units } = useViewerUnits(telemetry);
   const [expanded, setExpanded] = useState(false);
   const offline = !connected || stale;
   const visible = useOverlayVisibility({ connected, stale, lastLiveAt });

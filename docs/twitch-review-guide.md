@@ -34,6 +34,8 @@ themselves.
 
 ## Data handling
 
-The backend stores only a channel ID, an ingest key, and the latest telemetry
-snapshot per channel (job/truck stats — no personal or viewer data). See
-`docs/telemetry-contract.md` for the exact schema.
+The backend stores only a channel ID, an ingest key, the latest telemetry
+snapshot per channel, and the channel's recent completed jobs (job/truck stats,
+no personal or viewer data). Viewers' display preferences (units, layout,
+sections shown) live only in the viewer's own browser (`localStorage`) and are
+never sent to the backend. See `docs/telemetry-contract.md` for the exact schema.
