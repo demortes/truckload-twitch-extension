@@ -15,13 +15,13 @@
     "db:migrate:remote": "wrangler d1 migrations apply truckload --remote"
   },
   "dependencies": {
-    "hono": "^4.13.17"
+    "hono": "^4.13.19"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261110.1",
+    "@cloudflare/workers-types": "^5.20261116.1",
     "@types/node": "^26.6.6",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0",
-    "wrangler": "^4.159.0"
+    "wrangler": "^4.163.0"
   }
 }
